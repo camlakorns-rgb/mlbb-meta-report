@@ -500,6 +500,17 @@
 .km-meas{font-size:11.5px;color:#8fd8ff;margin-top:2px;}
 .km-meas.muted{color:var(--muted);font-style:italic;}
 @media(max-width:640px){.lfbar{margin-left:0;}}
+.cxcard{border-color:rgba(255,123,156,.25);}
+.cx-row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.06);}
+.cx-row:first-of-type{border-top:none;}
+.cx-pair{display:flex;align-items:center;gap:4px;min-width:118px;font-size:12.5px;flex-wrap:wrap;}
+.cx-pair i{color:var(--muted);font-style:normal;}
+.cx-pair .av{width:22px;height:22px;border-radius:5px;background-size:cover;flex:none;}
+.cx-body{flex:1;min-width:200px;}
+.cx-txt{font-size:13px;}
+.cx-resp{font-size:12px;color:var(--muted);margin-top:2px;}
+.cx-badge{margin-left:auto;white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+@media(max-width:640px){.cx-row{flex-wrap:wrap;}.cx-badge{margin-left:0;}}
 .bp-sit{margin-top:12px; padding-top:10px; border-top:1px dashed #6e5a1d;}
   .bp-sit .bp-blabel{color:#f0b429;}
   .sitrow{display:flex; align-items:flex-start; gap:8px; font-size:12px; margin-top:7px; line-height:1.5;}
@@ -2164,6 +2175,44 @@ function lockPick(name){
   render();
 }
 
+/* ---- combo threats: enemy PAIR danger from kit tags + measured duo WR ---- */
+function comboThreats(){
+  var rows = [], seen = {};
+  function isInit(x, roleX){ return x.cc && (x.mob || roleX.indexOf("Tank")>=0 || roleX.indexOf("Fighter")>=0); }
+  function isPayoff(y, roleY){ return y.burst && (roleY.indexOf("Assassin")>=0 || roleY.indexOf("Mage")>=0 || roleY.indexOf("Marksman")>=0); }
+  function add(kind, a, b, txt, resp, pri){
+    var key = kind+"|"+[a,b].sort().join("+");
+    if(seen[key]) return; seen[key] = 1;
+    rows.push({a:a, b:b, kind:kind, txt:txt, resp:resp, pri:pri});
+  }
+  for(var i=0;i<enemies.length;i++) for(var j=i+1;j<enemies.length;j++){
+    var A = enemies[i], B = enemies[j];
+    if(!KITS[A] || !KITS[B]) continue;
+    var ta = kitTags(A), tb = kitTags(B);
+    var ra = ROLE[A]||"", rb = ROLE[B]||"";
+    if((isInit(ta,ra)&&tb.chan) || (isInit(tb,rb)&&ta.chan))
+      add("setup", A, B, "engage-and-cluster setup — the channeled ult lands for free when both are alive", "stay split when both ults are up; save your dash or Purify for the channel", 1);
+    if((ta.stl&&(tb.cc||tb.burst)) || (tb.stl&&(ta.cc||ta.burst)))
+      add("stealth", A, B, "invisible opener with hard follow-up — the engage you never see coming", "group your vision, hug warded side-bushes, keep a CC answer ready for the reveal", 2);
+    if((ta.hpd&&tb.exec) || (tb.hpd&&ta.exec))
+      add("shred", A, B, "%HP shred + execute — your frontline gets deleted no matter how much armor it stacks", "stack HP and shields over raw defense; never let the tank soak both at once", 3);
+    if((isInit(ta,ra)&&isPayoff(tb,rb)) || (isInit(tb,rb)&&isPayoff(ta,ra)))
+      add("lockburst", A, B, "lockdown into burst — a chained one-shot on your carry", "Purify/Flicker on carries, fight front-to-back, never face-check together", 4);
+    var s = SYN[A]||[], duo = null;
+    for(var k=0;k<s.length;k++) if(s[k][0]===B){ duo = s[k][1]; break; }
+    if(duo !== null && duo >= 2){
+      if(seen["setup|"+[A,B].sort().join("+")] || seen["stealth|"+[A,B].sort().join("+")] || seen["shred|"+[A,B].sort().join("+")] || seen["lockburst|"+[A,B].sort().join("+")]){
+        rows.forEach(function(r){ if((r.a===A&&r.b===B)||(r.a===B&&r.b===A)) r.pp = duo; });
+      } else {
+        add("measduo", A, B, "win +"+duo.toFixed(1)+"pp MORE than expected when on the same team (measured duo edge)", "target the link: gank or trade out one of them early — the duo is their win condition", 5, duo);
+      }
+    }
+  }
+  var ah = enemies.filter(function(e){ return kitTags(e).aheal; });
+  if(ah.length >= 2) rows.push({a:ah[0], b:ah[1], kind:"aheal", txt:"double anti-heal — lifesteal and healing comps lose half their power", resp:"do not lean on sustain picks; win fights fast instead of trying to out-heal them", pri:2});
+  rows.sort(function(x,y){ return (x.pri-y.pri) || ((y.pp||0)-(x.pp||0)) || x.a.localeCompare(y.a); });
+  return rows.slice(0,4);
+}
 /* ---- ban advisor: threat = preys on your team x1.5 + meta tier - countered by your team ---- */
 var BANW = {S:1.5, A:1.0, B:0.5, C:0, D:0};
 function banAdvisorHtml(){
@@ -2178,7 +2227,15 @@ function banAdvisorHtml(){
       DB[H].c.forEach(function(pair, i){ if(pair[0]===T) countered.push({t:T, w: i===0?2:1}); });
     });
     var cw = 0; countered.forEach(function(c){ cw += c.w; });
-    cands.push({h:H, threat: prey.length*1.5 + (BANW[TIER[H]]||0) - cw, prey: prey, countered: countered});
+    var mPrey = [], mHandled = 0;
+    mine.forEach(function(T){
+      var pp1 = measEdge(H, T);
+      if(pp1 !== null) mPrey.push({t:T, pp:pp1});
+      var pp2 = measEdge(T, H);
+      if(pp2 !== null) mHandled += Math.min(pp2, 3);
+    });
+    var measT = 0; mPrey.forEach(function(x){ measT += Math.min(x.pp, 3); });
+    cands.push({h:H, threat: prey.length*1.5 + (BANW[TIER[H]]||0) - cw + measT*0.45 - mHandled*0.25, prey: prey, countered: countered, mPrey: mPrey, mHandled: mHandled});
   });
   cands.sort(function(a,b){ return (b.threat-a.threat) || (tierRank(a.h)-tierRank(b.h)) || a.h.localeCompare(b.h); });
   var top = cands.slice(0,5);
@@ -2186,9 +2243,11 @@ function banAdvisorHtml(){
   var rows = top.map(function(c, i){
     var why = [];
     if(c.prey.length) why.push('<b>eats '+c.prey.map(esc).join(" & ")+'</b>');
+    if(c.mPrey.length) why.push('\ud83d\udcca measured '+c.mPrey.slice(0,2).map(function(x){ return '+'+x.pp.toFixed(1)+'pp vs your '+x.t; }).join(', ')+(c.mPrey.length>2?'\u2026':''));
     if(TIER[c.h] && (TIER[c.h]==="S"||TIER[c.h]==="A") && c.threat>0) why.push(esc(TIER[c.h])+"-tier power pick");
     var cnote = "";
     if(c.countered.length) cnote = '<span class="ban-dim">your '+c.countered.map(function(x){return esc(x.t);}).join("/")+' already handles it</span>';
+    else if(c.mHandled > 0) cnote = '<span class="ban-dim">your team measurably handles it ('+'\u2212'+(c.mHandled*0.25).toFixed(1)+')</span>';
     return '<div class="ban-item'+(i===0?" first":"")+'" data-h="'+esc(c.h)+'" title="Click for '+esc(c.h)+"'s build — ban it yourself if you want"+'">'
 
       + '<span class="ban-rank">#'+(i+1)+'</span>'+avatar(c.h)
@@ -2200,7 +2259,7 @@ function banAdvisorHtml(){
     + '<b style="font-size:16px;">🚫 Ban advisor</b>'
     + '<span style="font-size:12px;color:var(--muted)">'+(metaOnly ? "no team input yet — pure meta bans" : "threats to YOUR lineup")+(bans.length? " · "+bans.length+" banned":"")+'</span></div>' 
     + rows
-    + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Threat = 1.5 × each of your heroes this pick is strong against + meta tier bonus (S +1.5 → B +0.5) − how hard your team counters it. Heroes already picked or banned are excluded from every list.</div></div>';
+    + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Threat = 1.5 × each of your heroes this pick is strong against + meta tier bonus (S +1.5 → B +0.5) − how hard your team counters it, all from the 3-source ensemble; ±0.45/0.25 × measured win-rate edges (mlbb.io ranked data) — 📊 rows show the measured preys-on-your-pick edges, and measured counters your team already owns discount a ban. Lock your pick to make it protect YOUR lineup. Heroes already picked or banned are excluded from every list.</div></div>';
 }
 
 /* ---- build panel + situational items ---- */
@@ -2724,6 +2783,28 @@ function render(){
       + balRow + laneSel + rfbtns + grid
       + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = <b>measured win-rate edges (mlbb.io ranked data, Aug 2026)</b> + 0.55× weight on our 3-source ensemble (● dots = how many trackers agree); −1.5 if another enemy is strong against the pick ⚠️; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by meta tier, then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
+    /* combo threats (enemy pairs) */
+    if(enemies.length >= 2){
+      var cx = comboThreats();
+      if(cx.length){
+        boardHtml += '<div class="card cxcard"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">'
+          + '<b style="font-size:16px;">\u26a0\ufe0f Combo threats</b>'
+          + '<span style="font-size:12px;color:var(--muted)">why this draft is dangerous as a TEAM \u2014 pairs, not singles</span></div>'
+          + cx.map(function(r){
+              var badge;
+              if(r.kind === "measduo") badge = '<span class="mb meas">\ud83d\udcca measured only</span>';
+              else if(r.pp) badge = '<span class="mb kvb">\u2705 kit-verified</span><span class="mb meas">\ud83d\udcca +'+r.pp.toFixed(1)+'pp together</span>';
+              else badge = '<span class="mb">\u2699\ufe0f kit logic</span>';
+              return '<div class="cx-row">'
+                + '<span class="cx-pair">'+avatar(r.a)+'<b>'+esc(r.a)+'</b><i>\u00d7</i>'+avatar(r.b)+'<b>'+esc(r.b)+'</b></span>'
+                + '<div class="cx-body"><div class="cx-txt">'+esc(r.txt)+'</div>'
+                + '<div class="cx-resp">\ud83d\udee1\ufe0f '+esc(r.resp)+'</div></div>'
+                + '<span class="cx-badge">'+badge+'</span></div>';
+            }).join("")
+          + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Pairs derived from skill-tag logic on real kit data (mlbb.io, Aug 2026), cross-checked against measured duo win-rates where available. \u2705 = kit logic explains a measured duo edge. Responses are draft fundamentals, not scraped advice.</div></div>';
+      }
+    }
+
     /* per-enemy breakdowns */
     boardHtml += enemies.map(function(en){
       var d = DB[en];
@@ -2750,7 +2831,7 @@ function render(){
     }).join("");
   }
 
-  var noteHtml = '<div class="cpk-note">⚖️ <b>Data honesty:</b> counter picks are ranked by <b>measured win-rate edges from mlbb.io ranked data (crawled Aug 30, 2026 — 925 measured pairs, 500 confirmed from both directions)</b>, backed by an <b>ensemble of three independent matchup trackers</b> (MLBBHub ranked stats, mlbb.io, mlcounters — crawled Aug 29, 2026, patch 2.1.95) and community guide consensus (Zathong, BitTopup, Reddit). No single site\'s list is trusted alone: <span class="cdots c3">●●●</span> = all three trackers list the pick, <span class="cdots c2">●●</span> = two, <span class="cdots c1">●</span> = one. "+X.X pp" = measured win-rate edge in percentage points (high-elo ranked sample). Meta tier badges (S–D) come from the MLBBHub ranked tier list (Aug 2026, all-ranks data). Builds: community presets (MLBBHub, 3 per hero in buy order) plus <b>Arena&#39;s take</b> — our own situational builds for every hero (a refined standard, and variants vs tanks/sustain, dive/burst, or physical/magic comps), synthesized from preset consensus + matchup itemization; not scraped from any site. Emblem-talent setups are MLBBHub defaults. Skill names &amp; effect tags are from mlbb.io hero pages (Aug 2026); the ⚔️ kit-matchup reasoning is our rule-based analysis on top of those tags — not scraped opinions.</div>';
+  var noteHtml = '<div class="cpk-note">⚖️ <b>Data honesty:</b> counter picks are ranked by <b>measured win-rate edges from mlbb.io ranked data (crawled Aug 30, 2026 — 925 measured pairs, 500 confirmed from both directions)</b>, backed by an <b>ensemble of three independent matchup trackers</b> (MLBBHub ranked stats, mlbb.io, mlcounters — crawled Aug 29, 2026, patch 2.1.95) and community guide consensus (Zathong, BitTopup, Reddit). No single site\'s list is trusted alone: <span class="cdots c3">●●●</span> = all three trackers list the pick, <span class="cdots c2">●●</span> = two, <span class="cdots c1">●</span> = one. "+X.X pp" = measured win-rate edge in percentage points (high-elo ranked sample). Meta tier badges (S–D) come from the MLBBHub ranked tier list (Aug 2026, all-ranks data). Builds: community presets (MLBBHub, 3 per hero in buy order) plus <b>Arena&#39;s take</b> — our own situational builds for every hero (a refined standard, and variants vs tanks/sustain, dive/burst, or physical/magic comps), synthesized from preset consensus + matchup itemization; not scraped from any site. Emblem-talent setups are MLBBHub defaults. Skill names &amp; effect tags are from mlbb.io hero pages (Aug 2026); the ⚔️ kit-matchup reasoning is our rule-based analysis on top of those tags — not scraped opinions. Combo-threat pairs use the same kit tags plus measured duo win-rates; ban-protection scores use measured pick-vs-pick edges.</div>';
 
   resEl.innerHTML = banHtml + bpHtml + boardHtml + noteHtml;
 
