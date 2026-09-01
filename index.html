@@ -2657,26 +2657,32 @@ function render(){
   var boardHtml = "";
   if(enemies.length){
     var score = {}, reasons = {}, warnedBy = {}, measCnt = {}, compTags = {};
+    var taken = enemies.concat(team, myPick ? [myPick] : []); /* never recommend picked/banned/enemy heroes */
+    function sampleF(p){ var pr = STATS[p] ? STATS[p][1] : 1; return pr / (pr + 0.8); }
+    function measEff(p, en){ var e = measEdge(p, en); return e === null ? null : e * sampleF(p); }
     enemies.forEach(function(en){
       var lf = laneFactor(en);
       DB[en].c.forEach(function(pair, i){
         var pick = pair[0], why = pair[1];
-        if(bans.indexOf(pick)>=0) return;
+        if(bans.indexOf(pick)>=0 || taken.indexOf(pick)>=0) return;
         if(!score[pick]) { score[pick]=0; reasons[pick]=[]; measCnt[pick]=0; }
-        var mp = measEdge(pick, en);
-        var pts = weightOf(i) * 0.55;
+        var mp = measEff(pick, en);
+        var confF = pair[2]===3 ? 1.0 : (pair[2]===2 ? 0.85 : 0.55); /* single-source opinions count less */
+        var pts = weightOf(i) * 0.55 * confF;
         if(mp !== null){ pts += Math.min(mp, 2.5); measCnt[pick] = (measCnt[pick]||0)+1; }
+        if(kitReason(pick, en).length) pts += 0.2; /* our rule-based kit logic backs this pick */
         score[pick] += pts * lf;
         reasons[pick].push({vs:en, why:why, conf:(pair[2]||1), pp:(mp===null?undefined:mp)});
       });
-      (MEAS[en]||[]).forEach(function(mp){
-        var pick = mp[0];
-        if(bans.indexOf(pick)>=0) return;
+      (MEAS[en]||[]).forEach(function(mpp){
+        var pick = mpp[0];
+        if(bans.indexOf(pick)>=0 || taken.indexOf(pick)>=0) return;
         if(!score[pick]){ score[pick]=0; reasons[pick]=[]; measCnt[pick]=0; }
         if(reasons[pick].some(function(r){ return r.vs===en; })) return;
-        score[pick] += Math.min(mp[1], 2.5) * lf;
+        var eff = mpp[1] * sampleF(pick); /* shrink by the pick's ranked sample size */
+        score[pick] += Math.min(eff, 2.5) * lf;
         measCnt[pick] = (measCnt[pick]||0)+1;
-        reasons[pick].push({vs:en, why:"Measured +"+mp[1].toFixed(1)+"pp win-rate edge (mlbb.io ranked data)", conf:3, pp:mp[1], measOnly:true});
+        reasons[pick].push({vs:en, why:"Measured +"+mpp[1].toFixed(1)+"pp win-rate edge (mlbb.io ranked data)", conf:3, pp:mpp[1], measOnly:true});
       });
     });
     if(team.length || myPick){
@@ -2691,10 +2697,30 @@ function render(){
         if(!score[a]) return;
         if(reasons[a].some(function(r){return r.vs===en;})) return;
         if(warnedBy[a] && warnedBy[a].indexOf(en)>=0) return;
-        score[a] -= 1.5;
+        score[a] -= 1.2;
         (warnedBy[a] = warnedBy[a] || []).push(en);
       });
+      /* measured reverse edges: this enemy actually beats the pick in ranked */
+      Object.keys(score).forEach(function(p){
+        if(warnedBy[p] && warnedBy[p].indexOf(en)>=0) return;
+        if(reasons[p] && reasons[p].some(function(r){ return r.vs===en; })) return;
+        var rev = measEdge(en, p);
+        if(rev === null) return;
+        score[p] -= Math.min(rev * sampleF(p), 3) * 0.5;
+        (warnedBy[p] = warnedBy[p] || []).push(en);
+      });
     });
+    /* meta-strength prior from measured tiers: a 43%-WR "counter" still loses you the game */
+    Object.keys(score).forEach(function(p){
+      var ts = TIERSCORE[p] ? TIERSCORE[p].v : 0;
+      score[p] += Math.max(-0.75, Math.min(0.75, ts * 0.3));
+    });
+    /* when you've staked a lane, off-lane picks get demoted */
+    if(myLane){
+      Object.keys(score).forEach(function(p){
+        if(laneOf(p).indexOf(myLane) < 0) score[p] -= 0.45;
+      });
+    }
     var allRanked = Object.keys(score).sort(function(a,b){
       return (score[b]-score[a]) || (tierRank(a)-tierRank(b)) || (reasons[b].length-reasons[a].length) || a.localeCompare(b);
     });
@@ -2804,7 +2830,7 @@ function render(){
       + '<button class="cpk-clear" id="cpkClear" title="Remove all enemies">✕ clear enemies</button></div>'
       + '<div class="verdict">'+verdict+'</div>'
       + balRow + laneSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = <b>measured win-rate edges (mlbb.io ranked data, Aug 2026)</b> + 0.55× weight on our 3-source ensemble (● dots = how many trackers agree); −1.5 if another enemy is strong against the pick ⚠️; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
