@@ -2710,10 +2710,12 @@ function render(){
         (warnedBy[p] = warnedBy[p] || []).push(en);
       });
     });
-    /* meta-strength prior from measured tiers: a 43%-WR "counter" still loses you the game */
+    /* meta-strength prior from measured tiers: a 43%-WR "counter" still loses you the game.
+       Weighted so counter edges cannot carry a weak hero past solid picks. */
     Object.keys(score).forEach(function(p){
       var ts = TIERSCORE[p] ? TIERSCORE[p].v : 0;
-      score[p] += Math.max(-0.75, Math.min(0.75, ts * 0.3));
+      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55));
+      if(TIER[p] === "D") score[p] -= 1.5; /* measured bottom tier: last resort, never a medal */
     });
     /* when you've staked a lane, off-lane picks get demoted */
     if(myLane){
@@ -2721,24 +2723,31 @@ function render(){
         if(laneOf(p).indexOf(myLane) < 0) score[p] -= 0.45;
       });
     }
+    /* D-tier answers sort to the back of the board: strong-meta options are always listed first */
+    var dFlag = function(p){ return TIER[p]==="D" ? 1 : 0; };
     var allRanked = Object.keys(score).sort(function(a,b){
-      return (score[b]-score[a]) || (tierRank(a)-tierRank(b)) || (reasons[b].length-reasons[a].length) || a.localeCompare(b);
+      return (dFlag(a)-dFlag(b)) || (score[b]-score[a]) || (tierRank(a)-tierRank(b)) || (reasons[b].length-reasons[a].length) || a.localeCompare(b);
     });
     var ranked = allRanked.slice(0,10);
 
-    var second = allRanked[1];
-    var gap = second ? score[allRanked[0]]-score[second] : 99;
-    var cluster = allRanked.filter(function(p){ return score[allRanked[0]]-score[p] <= 0.5; });
+    /* D-tier (measured bottom tier) heroes never take a medal or the verdict:
+       a hard counter on a weak hero still loses games. They stay listed, flagged. */
+    var medalPool = allRanked.filter(function(p){ return TIER[p] !== "D"; });
+    var lead = medalPool[0] || allRanked[0];
+    var lanePool = medalPool.length ? medalPool : allRanked;
+    var second = (medalPool[1] || allRanked.filter(function(p){ return p !== lead; })[0]);
+    var gap = second ? score[lead]-score[second] : 99;
+    var cluster = lanePool.filter(function(p){ return score[lead]-score[p] <= 0.5; });
     var verdict;
-    if (allRanked.length===1){
-      verdict = '🎯 <b>'+esc(allRanked[0])+' is the only listed answer — take it.</b>';
+    if (lanePool.length===1){
+      verdict = '🎯 <b>'+esc(lead)+' is the only strong-meta answer — take it.</b>';
     } else if (gap >= 1.5){
-      verdict = ' <b>'+esc(allRanked[0])+' is the clear answer</b> — the next option sits '+gap.toFixed(1)+' points behind. Lock it if the position fits.';
+      verdict = ' <b>'+esc(lead)+' is the clear answer</b> — the next option sits '+gap.toFixed(1)+' points behind. Lock it if the position fits.';
     } else if (cluster.length > 1){
       var cnames = cluster.slice(0,5).map(esc).join(", ") + (cluster.length>5 ? " +"+(cluster.length-5)+" more" : "");
       verdict = ' <b>Close call:</b> '+cnames+' are within half a point. Break the tie by <b>the position you still need</b> (balanced draft below) or by <b>meta tier</b> (badge on each card).';
     } else {
-      verdict = ' <b>'+esc(allRanked[0])+' leads narrowly</b> ('+gap.toFixed(1)+' pts ahead of '+esc(second)+') — the balanced draft below helps you choose by position.';
+      verdict = ' <b>'+esc(lead)+' leads narrowly</b> ('+gap.toFixed(1)+' pts ahead of '+esc(second)+') — the balanced draft below helps you choose by position.';
     }
     if(team.length || myPick){
       verdict += missingLanes.length
@@ -2752,9 +2761,9 @@ function render(){
         balChips.push('<span class="balchip taken" title="'+esc(l)+' covered by your '+esc(teamLanes[l])+'"><i>'+l+'</i>'+avatar(teamLanes[l])+esc(teamLanes[l])+' ✓</span>');
         return;
       }
-      for (var i=0;i<allRanked.length;i++){
-        if(laneOf(allRanked[i]).indexOf(l)>=0){
-          var hp = allRanked[i];
+      for (var i=0;i<lanePool.length;i++){
+        if(laneOf(lanePool[i]).indexOf(l)>=0){
+          var hp = lanePool[i];
           balChips.push('<span class="balchip'+((warnedBy[hp]||[]).length?" warned":"")+'" data-h="'+esc(hp)+'" title="'+esc(hp)+' — best '+l+' answer ('+score[hp].toFixed(1)+' pts'+((warnedBy[hp]||[]).length?'; ⚠️ '+esc(warnedBy[hp][0])+' is strong against it':'')+') — click for build">'
             + '<i>'+l+'</i>'+avatar(hp)+esc(hp)+'</span>');
           break;
@@ -2796,13 +2805,15 @@ function render(){
           var stx = STATS[pick];
           if(stx && stx[2] >= 12) metaBits.push('<span class="mb warn" title="banned in '+stx[2].toFixed(0)+'% of ranked games — have a backup ready">🚫 ban-risk '+stx[2].toFixed(0)+'%</span>');
           if(stx && stx[1] < 0.35) metaBits.push('<span class="mb" title="picked in only '+stx[1].toFixed(1)+'% of ranked games — thin sample behind these numbers">🔍 niche pick</span>');
+          if(TIER[pick]==="D") metaBits.push('<span class="mb warn" title="measured bottom tier this patch (mlbb.io ranked data) — a hard counter on a losing hero still loses games, so it cannot take a medal">📉 weak meta</span>');
           var metaRow = metaBits.length ? '<div class="rec-meta">'+metaBits.join('')+'</div>' : '';
           var topWhy = reasons[pick].slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
-          var medal = idx===0 ? " m1" : idx===1 ? " m2" : idx===2 ? " m3" : "";
+          var mslot = TIER[pick]==="D" ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D"; }).length;
+          var medal = mslot===0 ? " m1" : mslot===1 ? " m2" : mslot===2 ? " m3" : "";
           var warns = (warnedBy[pick]||[]).map(function(w){
             return '<span class="warn-badge" title="'+esc(w)+' is strong against '+esc(pick)+' — have a backup plan">⚠️ weak vs '+esc(w)+'</span>';
           }).join("");
-          var tb = TIER[pick] ? '<span class="tb tb-'+TIER[pick]+'" title="MLBBHub ranked tier, Aug 2026">'+TIER[pick]+'</span>' : '';
+          var tb = TIER[pick] ? '<span class="tb tb-'+TIER[pick]+'" title="measured meta tier (mlbb.io ranked data, Aug 2026)">'+TIER[pick]+'</span>' : '';
           var fills = "";
           var pl = laneOf(pick);
           for (var li=0; li<missingLanes.length; li++){
@@ -2830,7 +2841,7 @@ function render(){
       + '<button class="cpk-clear" id="cpkClear" title="Remove all enemies">✕ clear enemies</button></div>'
       + '<div class="verdict">'+verdict+'</div>'
       + balRow + laneSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
