@@ -621,6 +621,16 @@
 .profbar .st{background:#4a4d55;}
 .proftxt{font-size:12.5px;color:var(--muted);min-width:200px;flex:1;}
 .ofbar{margin-left:10px;}
+.banrow{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.bside-lbl{flex:none;width:52px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--muted);padding-top:30px;}
+.bside-lbl.theirs{color:#c98a6a;}
+.pad-actions{display:flex;gap:6px;}
+.exbtn{background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--gold);padding:3px 10px;cursor:pointer;font:inherit;font-size:12.5px;}
+.exbtn:hover{border-color:var(--gold);}
+.bi-row{padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--fg);line-height:1.5;}
+.bi-row:last-of-type{border-bottom:none;}
+.bi-note{padding:9px 14px;font-size:12.5px;color:var(--gold);border-top:1px solid var(--line);}
+.bp-order{font-size:11.5px;color:var(--muted);padding:2px 2px 4px;}
 @media (max-width:720px){
   .pad-vs{flex-direction:column;gap:10px;}
   .dslot{width:86px;min-height:68px;}
@@ -665,10 +675,11 @@
   <p class="lead">Run your whole draft here. <b>Tap any slot:</b> enemies on the right, your team on the left, your pick in the <b>YOU</b> slot, bans on top. The <b>ban advisor</b>, <b>counter board</b> and hero <b>builds</b> update on every change — lock your hero and its build adapts to the measured enemy damage mix — crit carries → Blade Armor, divers → Wind of Nature, full-damage comps → survival items inserted. Set <b>your pick timing</b> (1st/Mid/Last) to weight safe picks against hard counters. Click any hero anywhere to browse its build. Everything runs locally in this file.</p>
   <div class="card draftpad" id="draftPad">
   <div class="pad-top">
-    <div class="side-lbl grey">BANS <span class="side-note">— up to 10 · banned heroes never appear in any list</span></div>
-    <button id="draftClear" class="draft-clear" style="display:none;" title="Reset the whole draft — enemies, team, your pick and bans">Clear draft</button>
+    <div class="side-lbl grey">BANS <span class="side-note">— 5 yours + 5 theirs · banned heroes never appear in any list. <b>Their bans are intel:</b> people ban the counters of what they plan to play</span></div>
+    <span class="pad-actions"><button id="shareDraft" class="draft-clear" style="display:none;" title="Copy a link that recreates this exact draft">Share draft</button><button id="draftClear" class="draft-clear" style="display:none;" title="Reset the whole draft — enemies, team, your pick and bans">Clear draft</button></span>
   </div>
-  <div class="slotrow bans" id="banSlots"></div>
+  <div class="banrow"><span class="bside-lbl">YOURS</span><div class="slotrow bans" id="myBanSlots"></div></div>
+  <div class="banrow"><span class="bside-lbl theirs">THEIRS</span><div class="slotrow bans" id="theirBanSlots"></div></div>
   <div class="pad-vs">
     <div class="pad-side">
       <div class="side-lbl blue">YOUR TEAM <span class="side-note">— up to 4 teammates + you</span></div>
@@ -688,7 +699,7 @@
     <div class="picker-list" id="pickerList"></div>
   </div>
 </div>
-<div class="cpk-empty" id="cpkEmpty">Draft not started — tap a slot above: enemies (right), your team (left) or bans (top). The ban advisor, counter board and builds appear here as you go. <b>Tip:</b> add <i>Ling</i> as an enemy, then tap the YOU slot and pick <i>Saber</i> — every recommended hero is searchable too.</div>
+<div class="cpk-empty" id="cpkEmpty">Draft not started — tap a slot above: enemies (right), your team (left), your bans and theirs (top). Their bans feed the <b>enemy ban read</b>; enemy picks drive the <b>counter board</b>. <button id="exampleDraft" class="exbtn">Load example draft</button> — or add <i>Ling</i> as an enemy, then tap the YOU slot and pick <i>Saber</i>.</div>
   <div id="cpkResults"></div>
 </section>
 
@@ -2036,7 +2047,10 @@ var team = [];        /* teammates (up to 4) */
 var myPick = null;    /* your locked hero */
 var buildView = null; /* hero whose build is open in browse mode */
 /* ================= SLOT EDITOR (v20) ================= */
-var bans = [];       /* up to 10 */
+var myBans = [];      /* your side, up to 5 */
+var theirBans = [];   /* enemy side, up to 5 — read by banIntelHtml() */
+var bans = [];        /* union — every list excludes these */
+function syncBans(){ bans = myBans.concat(theirBans); }
 function addTeam(name){
   if(team.indexOf(name)>=0) return;
   if(enemies.indexOf(name)>=0){ cpkMsg(name+" is on the enemy team."); return; }
@@ -2046,26 +2060,35 @@ function addTeam(name){
   team.push(name); cpkMsg(""); render();
 }
 function removeTeam(name){ team = team.filter(function(t){return t!==name;}); render(); }
-function addBan(name){
+function addBan(name, side){
+  side = side || "my";
+  var arr = side === "their" ? theirBans : myBans;
   if(bans.indexOf(name)>=0) return;
   if(enemies.indexOf(name)>=0){ cpkMsg(name+" is on the enemy team."); return; }
   if(team.indexOf(name)>=0){ cpkMsg(name+" is on your team."); return; }
   if(myPick===name){ cpkMsg(name+" is your locked pick."); return; }
-  if(bans.length>=10){ cpkMsg("Max 10 bans (5 per side)."); return; }
-  bans.push(name); cpkMsg(""); render();
+  if(arr.length>=5){ cpkMsg("Max 5 bans per side."); return; }
+  arr.push(name); syncBans(); cpkMsg(""); render();
 }
-function removeBan(name){ bans = bans.filter(function(b){return b!==name;}); render(); }
+function removeBan(name){
+  myBans = myBans.filter(function(b){return b!==name;});
+  theirBans = theirBans.filter(function(b){return b!==name;});
+  syncBans(); render();
+}
 
 var picker = { open:false, kind:null, idx:-1, keys:[], sel:0 };
 function slotOccupant(kind, idx){
   if(kind === "enemy") return enemies[idx] || null;
-  if(kind === "ban") return bans[idx] || null;
+  if(kind === "myban") return myBans[idx] || null;
+  if(kind === "theirban") return theirBans[idx] || null;
   if(kind === "you") return myPick;
   if(kind === "team") return team[idx] || null;
   return null;
 }
 function pickerTitleFor(kind){
-  return kind === "enemy" ? "ADD AN ENEMY" : kind === "ban" ? "ADD A BAN"
+  return kind === "enemy" ? "ADD AN ENEMY"
+    : kind === "myban" ? "ADD YOUR BAN"
+    : kind === "theirban" ? "ADD AN ENEMY BAN"
     : kind === "you" ? "YOUR PICK — YOU" : "ADD A TEAMMATE";
 }
 function openPicker(kind, idx){
@@ -2157,9 +2180,11 @@ function pickSlotHero(name){
   if(kind === "enemy"){
     if(idx >= 0 && idx < enemies.length) enemies[idx] = name;
     else if(enemies.length < 5) enemies.push(name);
-  } else if(kind === "ban"){
-    if(idx >= 0 && idx < bans.length) bans[idx] = name;
-    else if(bans.length < 10) bans.push(name);
+  } else if(kind === "myban" || kind === "theirban"){
+    var barr = kind === "myban" ? myBans : theirBans;
+    if(idx >= 0 && idx < barr.length) barr[idx] = name;
+    else if(barr.length < 5) barr.push(name);
+    syncBans();
   } else if(kind === "you"){
     myPick = name; buildView = null;
   } else {
@@ -2173,7 +2198,7 @@ function removeSlot(kind, idx){
   var cur = slotOccupant(kind, idx);
   if(cur === null || cur === undefined) return;
   if(kind === "enemy") removeEnemy(cur);
-  else if(kind === "ban") removeBan(cur);
+  else if(kind === "myban" || kind === "theirban") removeBan(cur);
   else if(kind === "you"){ myPick = null; render(); }
   else removeTeam(cur);
 }
@@ -2199,15 +2224,22 @@ function wireSlots(containerEl){
   });
 }
 function renderSlots(){
-  var banEl = document.getElementById("banSlots");
+  var myBEl = document.getElementById("myBanSlots");
+  var thBEl = document.getElementById("theirBanSlots");
   var teamEl = document.getElementById("teamSlots");
   var enEl = document.getElementById("enemySlots");
   var html, i;
-  if(banEl){
-    html = bans.map(function(b, i2){ return slotHtml("ban", i2, b); }).join("");
-    if(bans.length < 10) html += slotHtml("ban", -1, null);
-    banEl.innerHTML = html;
-    wireSlots(banEl);
+  if(myBEl){
+    html = myBans.map(function(b, i2){ return slotHtml("myban", i2, b); }).join("");
+    if(myBans.length < 5) html += slotHtml("myban", -1, null);
+    myBEl.innerHTML = html;
+    wireSlots(myBEl);
+  }
+  if(thBEl){
+    html = theirBans.map(function(b, i2){ return slotHtml("theirban", i2, b); }).join("");
+    if(theirBans.length < 5) html += slotHtml("theirban", -1, null);
+    thBEl.innerHTML = html;
+    wireSlots(thBEl);
   }
   if(teamEl){
     html = slotHtml("you", 0, myPick);
@@ -2269,6 +2301,59 @@ function renderSlots(){
     if(e.key === "Escape" && picker.open) closePicker();
   });
 })();
+/* ---- shareable draft links (v22) ---- */
+function draftHash(){
+  var parts = [];
+  if(enemies.length) parts.push("e=" + encodeURIComponent(enemies.join(",")));
+  if(team.length) parts.push("t=" + encodeURIComponent(team.join(",")));
+  if(myPick) parts.push("p=" + encodeURIComponent(myPick));
+  if(myBans.length) parts.push("mb=" + encodeURIComponent(myBans.join(",")));
+  if(theirBans.length) parts.push("tb=" + encodeURIComponent(theirBans.join(",")));
+  if(myLane) parts.push("l=" + encodeURIComponent(myLane));
+  if(pickOrder !== "mid") parts.push("o=" + pickOrder);
+  return parts.length ? "#d/" + parts.join("&") : "";
+}
+function loadDraftHash(){
+  try{
+    var h = (location.hash || "");
+    if(h.indexOf("#d/") !== 0) return false;
+    var kv = {};
+    decodeURIComponent(h.slice(3)).split("&").forEach(function(seg){
+      var eq = seg.indexOf("=");
+      if(eq > 0) kv[seg.slice(0, eq)] = seg.slice(eq + 1);
+    });
+    function names(k){ return kv[k] ? kv[k].split(",").filter(function(n){ return !!DB[n]; }) : []; }
+    enemies = names("e").slice(0, 5);
+    team = names("t").slice(0, 4);
+    myPick = DB[kv.p] ? kv.p : null;
+    myBans = names("mb").slice(0, 5);
+    theirBans = names("tb").slice(0, 5);
+    syncBans();
+    myLane = LANES.indexOf(kv.l) >= 0 ? kv.l : null;
+    pickOrder = ["first","mid","last"].indexOf(kv.o) >= 0 ? kv.o : "mid";
+    return true;
+  }catch(e){ return false; }
+}
+(function(){
+  var sh = document.getElementById("shareDraft");
+  if(sh) sh.onclick = function(){
+    try{ location.hash = draftHash(); }catch(e){}
+    var url = location.href.split("#")[0] + draftHash();
+    if(typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){ cpkMsg("Draft link copied to clipboard."); },
+        function(){ cpkMsg("Draft link: " + url); });
+    } else cpkMsg("Draft link: " + url);
+  };
+  var ex = document.getElementById("exampleDraft");
+  if(ex) ex.onclick = function(){
+    myBans = ["Ling"]; theirBans = ["Saber", "Kaja"]; syncBans();
+    enemies = ["Fanny", "Zetian", "Moskov"];
+    team = ["Gloo"];
+    myPick = null; buildView = null; myLane = null; pickOrder = "mid";
+    render();
+    cpkMsg("Example draft loaded — read their bans below, then the board.");
+  };
+})();
 
 function lockPick(name){
   if(bans.indexOf(name)>=0){ cpkMsg(name+" is banned in this draft."); return; }
@@ -2318,6 +2403,61 @@ function comboThreats(){
 }
 /* ---- ban advisor: threat = preys on your team x1.5 + meta tier - countered by your team ---- */
 var BANW = {S:1.5, A:1.0, B:0.5, C:0, D:0};
+/* ================= ENEMY BAN INTELLIGENCE (v22) =================
+   People ban the counters of what they plan to play. For each enemy ban B,
+   the heroes B is a top-4 listed counter of are likely planned picks
+   (3-source ensemble DB). High-ban-rate heroes are usually just meta bans. */
+function banReads(){
+  var reads = [];
+  var excluded = enemies.concat(team, myPick ? [myPick] : [], bans);
+  theirBans.forEach(function(B){
+    var planned = [];
+    Object.keys(DB).forEach(function(H){
+      if(excluded.indexOf(H) >= 0) return;
+      var c = DB[H].c || [];
+      for(var i = 0; i < Math.min(c.length, 4); i++){
+        if(c[i][0] === B){ planned.push({h: H, rank: i, conf: c[i][2] || 1}); break; }
+      }
+    });
+    planned.sort(function(a, b){ return (a.rank - b.rank) || (b.conf - a.conf) || a.h.localeCompare(b.h); });
+    var br = STATS[B] ? STATS[B][2] : 0;
+    reads.push({b: B, banRate: br, planned: planned.slice(0, 3)});
+  });
+  return reads;
+}
+function banIntelHtml(){
+  if(!theirBans.length) return '';
+  var reads = banReads();
+  var rows = reads.map(function(r){
+    var head;
+    if(r.banRate >= 20 && !r.planned.length){
+      head = '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of ranked games: standard meta ban, little draft signal.';
+    } else if(r.banRate >= 20 && r.planned.length){
+      var pn2 = r.planned.map(function(p){ return esc(p.h); }).join(", ");
+      head = '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of games (partly a meta ban), but also a top counter of <b>'+pn2+'</b>: keep them on your radar.';
+    } else if(r.planned.length){
+      var names = r.planned.map(function(p){ return esc(p.h); }).join(", ");
+      var answers = [];
+      r.planned.forEach(function(p){
+        (DB[p.h].c || []).slice(0, 3).forEach(function(pair){
+          if(answers.length < 4 && bans.indexOf(pair[0]) < 0 && enemies.indexOf(pair[0]) < 0
+            && team.indexOf(pair[0]) < 0 && pair[0] !== myPick && answers.indexOf(pair[0]) < 0 && pair[0] !== r.b) answers.push(pair[0]);
+        });
+      });
+      head = '<b>'+esc(r.b)+'</b> — top counter of <b>'+names+'</b>: they may be planning to play them.'
+        + (answers.length ? ' Available answers: ' + answers.map(function(a){ return '<span class="pchip" data-h="'+esc(a)+'" title="'+esc(a)+' — click for build">'+avatar(a)+esc(a)+'</span>'; }).join(" ") : '');
+    } else {
+      head = '<b>'+esc(r.b)+'</b> — no strong read from our counter data.';
+    }
+    return '<div class="bi-row">'+head+'</div>';
+  }).join("");
+  var firstNote = '';
+  if(pickOrder === "first") firstNote = '<div class="bi-note">You pick 1st — you lock before seeing their picks. Treat their bans above as your scouting report, lean safe/flex picks (see board), and spend your ban on the biggest threat of the patch (advisor below).</div>';
+  return '<div class="card bicard"><div class="cardhead"><b>Enemy ban read</b>'
+    + '<span class="csub">what their bans tell you about their plan</span></div>'
+    + rows + firstNote
+    + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Method: people ban the counters of heroes they intend to play. For each enemy ban we list the heroes it is a top-4 counter of (3-source ensemble; banned and taken heroes excluded). Bans on 20%+ ban-rate heroes are treated as meta noise.</div></div>';
+}
 function banAdvisorHtml(){
   var mine = team.concat(myPick ? [myPick] : []);
   var picked = enemies.concat(mine, bans);
@@ -2565,7 +2705,10 @@ function lineupBuild(hero){
   else if(!picks.length) head = "Balanced lineup — " + pr.dmg + " damage threat" + (pr.dmg === 1 ? "" : "s") + ", " + pr.T.length + " frontline; no forced swaps, the standard build holds up.";
   else head = "Adapted to their damage mix (" + pr.P.length + " physical · " + pr.M.length + " magic · " + pr.T.length + " frontline).";
 
-  return { n: "⚡ vs this lineup", i: items, e: std.e, s: spell,
+  var orderHint = picks.length
+    ? "Buy order: after your 2nd damage item, grab the tier-1 defense component on the way (Leather Jerkin / Steel Legplates vs physical, the magic-resist component vs magic), finish your spike, then complete the defense item."
+    : "";
+  return { n: "⚡ vs this lineup", i: items, e: std.e, s: spell, o: orderHint,
     w: head + " " + (why.join(" · ") || "") + " Updates as the draft changes." };
 }
 function situationalHtml(){
@@ -2678,6 +2821,7 @@ function buildPanelHtml(){
       return '<div class="bp-build arena-b'+(live?' arena-live':'')+'"><div class="bp-blabel">'+esc(b.n)+(live?' <span class="tag live">LIVE</span>':'')+'</div>'
         + '<div class="bp-awhy">'+esc(b.w)+'</div>'
         + '<div class="bp-items">'+its+'</div>'
+        + (b.o ? '<div class="bp-order">'+esc(b.o)+'</div>' : '')
         + '<div class="bp-loadout">'+em+sp+'</div></div>';
     };
     var lb = enemies.length ? lineupBuild(hero) : null;
@@ -2749,7 +2893,7 @@ function compFit(pick){
 function weightOf(i){ return i===0?3 : i===1?2.5 : i===2?2 : i===3?1.5 : 1; }
 /* ---- clear the whole draft ---- */
 function clearDraft(){
-  enemies = []; team = []; myPick = null; bans = []; buildView = null;
+  enemies = []; team = []; myPick = null; myBans = []; theirBans = []; bans = []; buildView = null;
   closePicker(); cpkMsg("");
   render();
 }
@@ -2760,6 +2904,8 @@ function clearDraft(){
 function render(){
   var _dcb = document.getElementById("draftClear");
   if(_dcb) _dcb.style.display = (enemies.length || team.length || myPick || bans.length) ? "" : "none";
+  var _shb = document.getElementById("shareDraft");
+  if(_shb) _shb.style.display = (enemies.length || team.length || myPick || bans.length) ? "" : "none";
   /* draft slots (v20) */
   renderSlots();
 
@@ -2979,6 +3125,8 @@ function render(){
           if(stx && stx[2] >= 12) metaBits.push('<span class="mb warn" title="banned in '+stx[2].toFixed(0)+'% of ranked games — have a backup ready">🚫 ban-risk '+stx[2].toFixed(0)+'%</span>');
           if(stx && stx[1] < 0.35) metaBits.push('<span class="mb" title="picked in only '+stx[1].toFixed(1)+'% of ranked games — thin sample behind these numbers">🔍 niche pick</span>');
           if(TIER[pick]==="D") metaBits.push('<span class="mb warn" title="measured bottom tier this patch (mlbb.io ranked data) — a hard counter on a losing hero still loses games, so it cannot take a medal">📉 weak meta</span>');
+          var _flx = pickOrder === "first" ? laneOf(pick).split("/").filter(function(x){ return !!x; }) : [];
+          if(_flx.length >= 2) metaBits.push('<span class="mb" title="playable in '+_flx.length+' lanes — safe to lock before you see their answer">flex · '+_flx.join("/")+'</span>');
           var metaRow = metaBits.length ? '<div class="rec-meta">'+metaBits.join('')+'</div>' : '';
           var topWhy = reasons[pick].slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
           var mslot = TIER[pick]==="D" ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D"; }).length;
@@ -3067,7 +3215,7 @@ function render(){
 
   var noteHtml = '<div class="cpk-note">⚖️ <b>Data honesty:</b> counter picks are ranked by <b>measured win-rate edges from mlbb.io ranked data (crawled Aug 30, 2026 — 925 measured pairs, 500 confirmed from both directions)</b>, backed by an <b>ensemble of three independent matchup trackers</b> (MLBBHub ranked stats, mlbb.io, mlcounters — crawled Aug 29, 2026, patch 2.1.95) and community guide consensus (Zathong, BitTopup, Reddit). No single site\'s list is trusted alone: <span class="cdots c3">●●●</span> = all three trackers list the pick, <span class="cdots c2">●●</span> = two, <span class="cdots c1">●</span> = one. "+X.X pp" = measured win-rate edge in percentage points (high-elo ranked sample). Tier badges (S–D) are computed by us from mlbb.io ranked win/pick/ban rates (Aug 30, 2026) — sample-shrunk win rate plus a ban-rate signal, ranked relative to the field; ▲▼ in the tier list marks disagreement with MLBBHub editorial tiers. Builds: community presets (MLBBHub, 3 per hero in buy order) plus <b>Arena&#39;s take</b> — our own situational builds for every hero (a refined standard, and variants vs tanks/sustain, dive/burst, or physical/magic comps), synthesized from preset consensus + matchup itemization; not scraped from any site. Emblem-talent setups are MLBBHub defaults. Skill names &amp; effect tags are from mlbb.io hero pages (Aug 2026); the ⚔️ kit-matchup reasoning is our rule-based analysis on top of those tags — not scraped opinions. Combo-threat pairs use the same kit tags plus measured duo win-rates; ban-protection scores use measured pick-vs-pick edges.</div>';
 
-  resEl.innerHTML = banHtml + bpHtml + boardHtml + noteHtml;
+  resEl.innerHTML = banIntelHtml() + banHtml + bpHtml + boardHtml + noteHtml;
 
   /* wire up */
   var clearBtn = document.getElementById("cpkClear");
@@ -3097,6 +3245,7 @@ function render(){
   });
 }
 
+loadDraftHash(); /* v22: restore a shared draft before first render */
 render();
 
 /* ---- measured tier list rendering + editorial-disagreement chips ---- */
