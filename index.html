@@ -2311,6 +2311,7 @@ function draftHash(){
   if(theirBans.length) parts.push("tb=" + encodeURIComponent(theirBans.join(",")));
   if(myLane) parts.push("l=" + encodeURIComponent(myLane));
   if(pickOrder !== "mid") parts.push("o=" + pickOrder);
+  if(comfortMode !== "all") parts.push("c=" + comfortMode);
   return parts.length ? "#d/" + parts.join("&") : "";
 }
 function loadDraftHash(){
@@ -2331,6 +2332,7 @@ function loadDraftHash(){
     syncBans();
     myLane = LANES.indexOf(kv.l) >= 0 ? kv.l : null;
     pickOrder = ["first","mid","last"].indexOf(kv.o) >= 0 ? kv.o : "mid";
+    comfortMode = kv.c === "easy" ? "easy" : "all";
     return true;
   }catch(e){ return false; }
 }
@@ -2580,6 +2582,23 @@ function skillMatchupHtml(hero){
     + '<div class="km-you">'+avatar(hero)+'<b>'+esc(hero)+' kit:</b>'+kitChips(hero)+'<span class="km-skills">'+kitSkills(hero).map(function(s){ return '<span class="km-sk">'+esc(s)+'</span>'; }).join('')+'</span></div>'
     + rows + '</div>';
 }
+/* ================= PILOT DIFFICULTY + COORDINATION (v23) =================
+   Difficulty curated from official in-game ratings + community consensus
+   (0 easy / 1 normal / 2 hard / 3 very hard; newer heroes default normal).
+   Coordination flags follow our editorial cross-checks: heroes that pay off
+   most when the team plays around them (esports-tier, solo-queue coin-flips). */
+var DIFF3 = ["Fanny","Ling","Gusion","Hayabusa","Kagura","Guinevere","Julian","Joy","Benedetta","Selena"];
+var DIFF2 = ["Chou","Lancelot","Natalia","Helcurt","Harley","Kadita","Lunox","Valentina","Yve","Lylia","Luo Yi","Faramis","Beatrix","Wanwan","Claude","Granger","Moskov","Kimmy","Franco","Kaja","Hanzo","Paquito","Leomord","Sun","Badang","Aldous","Akai","Atlas","Fredrinn","Novaria","Pharsa","Xavier"];
+var DIFF0 = ["Miya","Eudora","Zilong","Saber","Layla","Tigreal","Minotaur","Balmond","Hilda","Bane","Alucard","Estes","Rafaela","Floryn","Nana","Hanabi","Hylos","Belerick","Uranus","Masha","Argus","Aulus","Cyclops","Odette","Esmeralda","Thamuz"];
+var NEEDS_TEAM = ["Hayabusa","Zhuxin","Atlas","Johnson","Odette","Angela","Estes","Aldous","Minsitthar","Yi Sun-shin"];
+function diffOf(h){
+  if(DIFF3.indexOf(h) >= 0) return 3;
+  if(DIFF2.indexOf(h) >= 0) return 2;
+  if(DIFF0.indexOf(h) >= 0) return 0;
+  return 1;
+}
+var comfortMode = "all"; /* all | easy */
+
 /* ================= ENEMY DAMAGE PROFILE (v21) =================
    Damage types derived from what each hero actually builds (standard preset):
    2+ magic items = magic dealer; Berserker Fury/Windtalker = crit threat;
@@ -3010,6 +3029,12 @@ function render(){
         if((primP === "Marksman" || primP === "Mage") && !(KITS[p] && KITS[p].t && KITS[p].t.mob && KITS[p].t.mob.length)) score[p] -= 0.15;
       });
     }
+    /* comfort mode: a hero you cannot pilot does not win you games */
+    if(comfortMode === "easy"){
+      Object.keys(score).forEach(function(p){
+        if(diffOf(p) >= 2) score[p] -= (diffOf(p) === 3 ? 1.2 : 0.7);
+      });
+    }
     /* when you've staked a lane, off-lane picks get demoted */
     if(myLane){
       Object.keys(score).forEach(function(p){
@@ -3107,6 +3132,10 @@ function render(){
       + '<span class="lf-lbl">You pick:</span>'
       + [["first","1st"],["mid","Mid"],["last","Last"]].map(function(o){ return '<button class="rfbtn'+(pickOrder===o[0]?" on":"")+'" data-o="'+o[0]+'">'+o[1]+'</button>'; }).join("")
       + '</span>';
+    var comfortSel = '<span class="rfbar cfbar" title="Only picks you can pilot: hard and very-hard heroes get demoted (still listed, flagged) — a hero you cannot pilot does not win you games.">'
+      + '<span class="lf-lbl">Comfort:</span>'
+      + [["all","All"],["easy","Easy picks"]].map(function(o){ return '<button class="rfbtn'+(comfortMode===o[0]?" on":"")+'" data-c="'+o[0]+'">'+o[1]+'</button>'; }).join("")
+      + '</span>';
     var grid = show.length
       ? '<div class="rec-grid">' + show.map(function(pick, idx){
           var vs = reasons[pick].map(function(r){
@@ -3131,6 +3160,10 @@ function render(){
           if(TIER[pick]==="D") metaBits.push('<span class="mb warn" title="measured bottom tier this patch (mlbb.io ranked data) — a hard counter on a losing hero still loses games, so it cannot take a medal">📉 weak meta</span>');
           var _flx = pickOrder === "first" ? laneOf(pick).split("/").filter(function(x){ return !!x; }) : [];
           if(_flx.length >= 2) metaBits.push('<span class="mb" title="playable in '+_flx.length+' lanes — safe to lock before you see their answer">flex · '+_flx.join("/")+'</span>');
+          var _df = diffOf(pick);
+          if(_df === 3) metaBits.push('<span class="mb warn" title="very high pilot difficulty (community consensus) — this hero takes real practice to perform at full value; Easy-picks mode demotes it">⚡ very hard to pilot</span>');
+          else if(_df === 2) metaBits.push('<span class="mb" title="high pilot difficulty — combo/skillshot demanding; Easy-picks mode demotes it">⚡ hard to pilot</span>');
+          if(NEEDS_TEAM.indexOf(pick) >= 0) metaBits.push('<span class="mb" title="per editorial cross-checks this hero pays off most when your team plays around it — esports-tier in coordinated hands, coin-flip in solo queue">needs coordination</span>');
           var metaRow = metaBits.length ? '<div class="rec-meta">'+metaBits.join('')+'</div>' : '';
           var topWhy = reasons[pick].slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
           var mslot = TIER[pick]==="D" ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D"; }).length;
@@ -3166,8 +3199,8 @@ function render(){
       + '<button class="cpk-clear" id="cpkClear" title="Remove all enemies">✕ clear enemies</button></div>'
       + '<div class="verdict">'+verdict+'</div>'
       + profHtml
-      + balRow + laneSel + orderSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters. The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + balRow + laneSel + orderSel + comfortSel + rfbtns + grid
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters; Easy-picks mode demotes hard-to-pilot heroes (difficulty curated from official ratings + community consensus). The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
@@ -3232,6 +3265,9 @@ function render(){
   });
   Array.prototype.forEach.call(resEl.querySelectorAll(".ofbar .rfbtn"), function(el){
     el.onclick = function(ev){ ev.stopPropagation(); pickOrder = el.getAttribute("data-o") || "mid"; render(); };
+  });
+  Array.prototype.forEach.call(resEl.querySelectorAll(".cfbar .rfbtn"), function(el){
+    el.onclick = function(ev){ ev.stopPropagation(); comfortMode = el.getAttribute("data-c") || "all"; render(); };
   });
   Array.prototype.forEach.call(resEl.querySelectorAll(".pickbtn"), function(el){
     el.onclick = function(){ lockPick(el.getAttribute("data-h")); };
