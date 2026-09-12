@@ -613,6 +613,14 @@
 .cur-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);}
 .cur-row .cbtn{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:7px 8px;cursor:pointer;font:inherit;font-size:12.5px;}
 .cur-row .cbtn:hover{border-color:var(--gold);}
+.profrow{display:flex;align-items:center;gap:12px;margin:10px 0 2px;flex-wrap:wrap;}
+.profbar{display:flex;width:170px;height:8px;border-radius:4px;overflow:hidden;border:1px solid var(--line);flex:none;}
+.profbar .seg{display:block;height:100%;}
+.profbar .sp{background:#c9a06a;}
+.profbar .sm{background:#7f8fbf;}
+.profbar .st{background:#4a4d55;}
+.proftxt{font-size:12.5px;color:var(--muted);min-width:200px;flex:1;}
+.ofbar{margin-left:10px;}
 @media (max-width:720px){
   .pad-vs{flex-direction:column;gap:10px;}
   .dslot{width:86px;min-height:68px;}
@@ -654,7 +662,7 @@
 <!-- ================= COUNTER PICKER ================= -->
 <section id="counter">
   <h2><span class="num">01</span>Draft Helper — bans, counters &amp; builds <span class="tag live">LIVE TOOL</span></h2>
-  <p class="lead">Run your whole draft here. <b>Tap any slot:</b> enemies on the right, your team on the left, your pick in the <b>YOU</b> slot, bans on top. The <b>ban advisor</b>, <b>counter board</b> and hero <b>builds</b> update on every change — lock your hero and its build adapts to the enemy comp (anti-heal, armor, etc.). Click any hero anywhere to browse its build. Everything runs locally in this file.</p>
+  <p class="lead">Run your whole draft here. <b>Tap any slot:</b> enemies on the right, your team on the left, your pick in the <b>YOU</b> slot, bans on top. The <b>ban advisor</b>, <b>counter board</b> and hero <b>builds</b> update on every change — lock your hero and its build adapts to the measured enemy damage mix — crit carries → Blade Armor, divers → Wind of Nature, full-damage comps → survival items inserted. Set <b>your pick timing</b> (1st/Mid/Last) to weight safe picks against hard counters. Click any hero anywhere to browse its build. Everything runs locally in this file.</p>
   <div class="card draftpad" id="draftPad">
   <div class="pad-top">
     <div class="side-lbl grey">BANS <span class="side-note">— up to 10 · banned heroes never appear in any list</span></div>
@@ -2428,68 +2436,158 @@ function skillMatchupHtml(hero){
     + '<div class="km-you">'+avatar(hero)+'<b>'+esc(hero)+' kit:</b>'+kitChips(hero)+'<span class="km-skills">'+kitSkills(hero).map(function(s){ return '<span class="km-sk">'+esc(s)+'</span>'; }).join('')+'</span></div>'
     + rows + '</div>';
 }
+/* ================= ENEMY DAMAGE PROFILE (v21) =================
+   Damage types derived from what each hero actually builds (standard preset):
+   2+ magic items = magic dealer; Berserker Fury/Windtalker = crit threat;
+   DHS/Golden Staff/Windtalker/Corrosive Scythe = attack-speed threat.
+   Tanks count as frontline, not damage. Itemization rules follow ONE Esports
+   + MLBB wiki + community consensus (Athena vs Radiant, Blade vs Antique). */
+function buildOf(h){ return (MYB[h] || [])[0] || null; }
+function dmgTypeOf(h){
+  if(TANKS.indexOf(h) >= 0) return "T";
+  if((ROLE[h] || "").indexOf("Mage") >= 0) return "M";
+  var b = buildOf(h);
+  if(b){
+    var mag = 0;
+    for(var k = 0; k < b.i.length; k++) if(AR_MAG[b.i[k]]) mag++;
+    if(mag >= 2) return "M";
+  }
+  return "P";
+}
+function critUser(h){
+  var b = buildOf(h);
+  return !!b && (b.i.indexOf("Berserker's Fury") >= 0 || b.i.indexOf("Windtalker") >= 0);
+}
+function aspdUser(h){
+  var b = buildOf(h);
+  return !!b && (b.i.indexOf("Demon Hunter Sword") >= 0 || b.i.indexOf("Golden Staff") >= 0 || b.i.indexOf("Windtalker") >= 0 || b.i.indexOf("Corrosive Scythe") >= 0);
+}
+function compProfile(){
+  var P = [], M = [], T = [], crit = [], aspd = [], heal = [], div = [], sust = [], ccN = 0;
+  enemies.forEach(function(e){
+    var d = dmgTypeOf(e);
+    if(d === "M") M.push(e); else if(d === "P") P.push(e); else T.push(e);
+    if(critUser(e)) crit.push(e);
+    if(aspdUser(e)) aspd.push(e);
+    if(HEALERS.indexOf(e) >= 0) heal.push(e);
+    if(DIVERS.indexOf(e) >= 0) div.push(e);
+    if(AR_SUSMAGE.indexOf(e) >= 0) sust.push(e);
+    if(CCLIST.indexOf(e) >= 0) ccN++;
+  });
+  var dmg = P.length + M.length;
+  return {
+    P: P, M: M, T: T, crit: crit, aspd: aspd, heal: heal, div: div, sust: sust, ccN: ccN,
+    dmg: dmg,
+    fullDamage: enemies.length >= 4 && T.length === 0 && dmg >= 4,
+    heavyPhys: P.length >= 3,
+    heavyMagic: M.length >= 2
+  };
+}
 function lineupBuild(hero){
-  var std = (MYB[hero] || [])[0];
+  var std = buildOf(hero);
   if(!std || !enemies.length) return null;
+  var pr = compProfile();
   var prim = (ROLE[hero] || "").split("·")[0].trim();
   var tanky = prim === "Tank" || prim === "Support";
+  var fighter = prim === "Fighter";
+  var squishy = !tanky && !fighter;
+  var backline = prim === "Marksman" || prim === "Mage";
   var magic = std.i.some(function(it){ return AR_MAG[it]; });
-  var heal = enemies.filter(function(e){ return HEALERS.indexOf(e) >= 0; });
-  var tanks = enemies.filter(function(e){ return TANKS.indexOf(e) >= 0; });
-  var divers = enemies.filter(function(e){ return DIVERS.indexOf(e) >= 0; });
-  var cc = enemies.filter(function(e){ return CCLIST.indexOf(e) >= 0; });
-  var mages = enemies.filter(function(e){ return (ROLE[e] || "").indexOf("Mage") >= 0; });
-  var phys = enemies.filter(function(e){ var r = ROLE[e] || ""; return r.indexOf("Assassin") >= 0 || r.indexOf("Fighter") >= 0 || r.indexOf("Marksman") >= 0; });
-  var ticks = enemies.filter(function(e){ return AR_SUSMAGE.indexOf(e) >= 0; });
-  var needs = [];
-  if(heal.length >= 2) needs.push([tanky ? "Dominance Ice" : (magic ? "Glowing Wand" : "Sea Halberd"), "anti-heal vs " + heal.slice(0,2).join(" + ")]);
-  if(mages.length >= 2) needs.push([tanky ? "Oracle" : (ticks.length ? "Radiant Armor" : "Athena's Shield"), "magic defense vs " + mages.slice(0,2).join(" + ")]);
-  if(phys.length >= 3) needs.push([tanky ? "Antique Cuirass" : "Immortality", "survive " + phys.slice(0,3).join(", ")]);
-  if(divers.length >= 2) needs.push([prim === "Marksman" && !magic ? "Wind of Nature" : (magic || prim === "Mage" ? "Winter Crown" : (tanky ? "Immortality" : "Queen's Wings")), "anti-dive vs " + divers.slice(0,2).join(" + ")]);
-  if(tanks.length >= 2) needs.push([magic ? (std.i.indexOf("Divine Glaive") >= 0 ? "Wishing Lantern" : "Divine Glaive") : (prim === "Marksman" ? "Demon Hunter Sword" : "Malefic Roar"), "shred the " + tanks.slice(0,2).join(" + ") + " front line"]);
+
+  function antiHealItem(){ return tanky ? "Dominance Ice" : (magic ? "Glowing Wand" : "Sea Halberd"); }
+  function magicItem(){ return squishy ? "Athena's Shield" : (pr.sust.length ? "Radiant Armor" : "Athena's Shield"); }
+  function diveItem(){
+    if(prim === "Marksman" && !magic) return "Wind of Nature";
+    if(magic || prim === "Mage") return "Winter Crown";
+    return tanky ? "Immortality" : "Queen's Wings";
+  }
+  function physItem(){ return pr.crit.length ? "Blade Armor" : "Antique Cuirass"; }
+
+  /* ordered defensive answers; backliners threatened by divers answer the dive first */
+  var order = (backline && pr.div.length >= 2)
+    ? ["dive", "heal", "magic", "phys", "aspd", "imm"]
+    : ["heal", "magic", "phys", "aspd", "dive", "imm"];
+  var table = {
+    heal:  pr.heal.length >= 2 ? [antiHealItem(), "anti-heal vs " + pr.heal.slice(0,2).join(" + ")] : null,
+    magic: pr.heavyMagic ? [magicItem(), "magic damage from " + pr.M.slice(0,2).join(", ") + (squishy ? " — Athena's Shield stops the one-combo delete" : (pr.sust.length ? " — sustained ticks stack Radiant Armor" : ""))] : null,
+    phys:  (pr.crit.length && (pr.P.length >= 2 || pr.crit.length >= 2))
+             ? ["Blade Armor", "crit carries (" + pr.crit.slice(0,2).join(", ") + ") — the only crit-damage reduction in the game"]
+             : (pr.P.length >= 3 ? ["Antique Cuirass", "physical skill damage from " + pr.P.slice(0,3).join(", ") + " — Deter stacks cut their burst"]
+               : (pr.P.length >= 2 && (squishy || pr.fullDamage) ? ["Antique Cuirass", "physical threats (" + pr.P.slice(0,2).join(", ") + ") — cuts their attack on every skill hit"] : null)),
+    aspd:  (pr.aspd.length && (tanky || pr.heal.length)) ? ["Dominance Ice", "attack-speed slow vs " + pr.aspd.slice(0,2).join(", ") + (pr.heal.length ? " + cuts their healing" : "")] : null,
+    dive:  pr.div.length >= 2 ? [diveItem(), "they dive you (" + pr.div.slice(0,2).join(", ") + ")"] : null,
+    imm:   (pr.fullDamage && !tanky) ? ["Immortality", "zero frontline, " + pr.dmg + " damage threats — they win the damage race unless you get a second life"] : null
+  };
+  var picks = [];
+  order.forEach(function(key){ if(table[key]) picks.push(table[key]); });
+
+  /* penetration vs a double-tank front line is an offense flex, not defense budget */
+  var flex = null;
+  if(pr.T.length >= 2){
+    flex = magic ? (std.i.indexOf("Divine Glaive") >= 0 ? "Wishing Lantern" : "Divine Glaive")
+                 : (prim === "Marksman" ? "Demon Hunter Sword" : "Malefic Roar");
+  }
+
+  /* how many flex slots convert to survival (std defense items already count) */
+  function isDef(it){
+    return PHYSDEF.indexOf(it) >= 0 || MAGICDEF.indexOf(it) >= 0 || it === "Immortality"
+      || it === "Queen's Wings" || it === "Wind of Nature" || it === "Winter Crown";
+  }
+  var already = std.i.filter(isDef).length;
+  var budget = tanky ? 2
+    : (pr.fullDamage || (pr.heavyPhys && pr.heavyMagic)) ? 2
+    : (pr.dmg >= 3 ? (squishy ? 2 : 1) : (pr.dmg >= 2 ? 1 : 0));
+  budget = Math.max(0, budget - already);
+
   var boot = "Tough Boots";
   for(var b0 = 0; b0 < std.i.length; b0++) if(AR_BOOTS[std.i[b0]]) boot = std.i[b0];
   var items = [boot].concat(std.i.filter(function(it){ return !AR_BOOTS[it]; }).slice(0, 2));
   var why = [];
-  needs.forEach(function(nd){
-    if(items.indexOf(nd[0]) < 0 && items.length < 6){ items.push(nd[0]); why.push(nd[1]); }
-    else if(items.indexOf(nd[0]) >= 0 && why.length < 4){ why.push(nd[1]); }
-  });
+  picks = picks.filter(function(nd){ return items.indexOf(nd[0]) < 0; }).slice(0, budget);
+  picks.forEach(function(nd){ items.push(nd[0]); why.push(nd[1]); });
+  if(flex && items.indexOf(flex) < 0 && items.length < 6){
+    items.push(flex);
+    why.push("shred the " + pr.T.slice(0,2).join(" + ") + " front line");
+  }
   std.i.forEach(function(it){ if(items.length < 6 && items.indexOf(it) < 0 && !AR_BOOTS[it]) items.push(it); });
+
   var spell = std.s;
-  if(cc.length >= 3){
+  if(pr.ccN >= 3){
     if(items[0] !== "Tough Boots") items[0] = "Tough Boots";
     if(spell === "Flicker") spell = "Purify";
     why.push("Tough Boots" + (spell === "Purify" ? " + Purify" : "") + " vs their CC chain");
   }
+
+  var head;
+  if(pr.fullDamage && !picks.length && already >= 2) head = "Full-damage comp — " + pr.dmg + " damage threats, no frontline; your standard build already carries " + already + " defensive items. That IS the answer.";
+  else if(pr.fullDamage) head = "Full-damage comp — " + pr.dmg + " damage threats, no frontline to absorb anything. This build keeps your core and inserts " + picks.length + " survival item" + (picks.length === 1 ? "" : "s") + ": trade a little damage for not dying in their opener.";
+  else if(!picks.length && already >= 2) head = "Balanced lineup — and your standard build already carries " + already + " defensive items. That IS the answer.";
+  else if(!picks.length) head = "Balanced lineup — " + pr.dmg + " damage threat" + (pr.dmg === 1 ? "" : "s") + ", " + pr.T.length + " frontline; no forced swaps, the standard build holds up.";
+  else head = "Adapted to their damage mix (" + pr.P.length + " physical · " + pr.M.length + " magic · " + pr.T.length + " frontline).";
+
   return { n: "⚡ vs this lineup", i: items, e: std.e, s: spell,
-    w: (why.length ? why.join(" · ") : "Balanced lineup — no forced swaps; the standard build holds up.") + " Regenerates as the draft changes." };
+    w: head + " " + (why.join(" · ") || "") + " Updates as the draft changes." };
 }
 function situationalHtml(){
   if(!enemies.length) return '';
-  var heal = enemies.filter(function(e){return HEALERS.indexOf(e)>=0;});
-  var tanks = enemies.filter(function(e){return TANKS.indexOf(e)>=0;});
-  var divers = enemies.filter(function(e){return DIVERS.indexOf(e)>=0;});
-  var cc = enemies.filter(function(e){return CCLIST.indexOf(e)>=0;});
-  var mages = enemies.filter(function(e){return (ROLE[e]||"").indexOf("Mage")>=0;});
-  var sustainedMages = enemies.filter(function(e){return ["Alice","Esmeralda","Lunox","Valir","Zhuxin","Harith","Yve","Chang'e","Gord","Lylia"].indexOf(e)>=0;});
-  var phys = enemies.filter(function(e){var r=ROLE[e]||"";return r.indexOf("Assassin")>=0||r.indexOf("Fighter")>=0||r.indexOf("Marksman")>=0;});
+  var pr = compProfile();
   var recs = [];
-  if(heal.length>=2) recs.push(["Sea Halberd", "anti-heal is near-mandatory — sustain: "+heal.map(esc).join(", ")+" (Dominance Ice for tanks, Necklace of Durance for mages)"]);
-  if(mages.length>=2) recs.push(["Athena's Shield", "heavy magic damage ("+mages.map(esc).join(", ")+")"]);
-  if(sustainedMages.length>=1) recs.push(["Radiant Armor", "repeated magic ticks from "+sustainedMages.map(esc).join(", ")+" stack Radiant faster than they damage you"]);
-  if(phys.length>=3) recs.push(["Antique Cuirass", "3+ physical skill threats ("+phys.map(esc).join(", ")+") — cuts their skill burst"]);
-  if(tanks.length>=2) recs.push(["Demon Hunter Sword", "tanky front line ("+tanks.map(esc).join(", ")+") — %HP damage; Malefic Roar for fighters, Genius Wand/Glowing Wand for mages"]);
-  if(divers.length>=2) recs.push(["Wind of Nature", "diver-heavy comp ("+divers.map(esc).join(", ")+") — Wind of Nature for marksmen, Winter Truncheon for mages"]);
-  if(cc.length>=3) recs.push(["Tough Boots", "heavy CC ("+cc.map(esc).join(", ")+") — Tough Boots + consider Purify over your default spell"]);
+  if(pr.heal.length >= 2) recs.push(["Sea Halberd", "anti-heal is near-mandatory — sustain: " + pr.heal.map(esc).join(", ") + " (Dominance Ice for tanks, Necklace of Durance for mages)"]);
+  if(pr.heavyMagic) recs.push(["Athena's Shield", "heavy magic damage (" + pr.M.map(esc).join(", ") + ")" + (pr.sust.length ? " — Radiant Armor instead if you are the frontline vs sustained ticks (" + pr.sust.slice(0,2).map(esc).join(", ") + ")" : "")]);
+  if(pr.crit.length && (pr.P.length >= 2 || pr.crit.length >= 2)) recs.push(["Blade Armor", "crit carries (" + pr.crit.map(esc).join(", ") + ") — the only crit-damage reduction in the game"]);
+  if(pr.heavyPhys && !pr.crit.length) recs.push(["Antique Cuirass", "physical skill threats (" + pr.P.map(esc).join(", ") + ") — Deter cuts their attack per skill hit"]);
+  if(pr.aspd.length >= 2) recs.push(["Dominance Ice", "attack-speed threats (" + pr.aspd.map(esc).join(", ") + ") — the aura slows their basic attacks"]);
+  if(pr.T.length >= 2) recs.push(["Demon Hunter Sword", "tanky front line (" + pr.T.map(esc).join(", ") + ") — %HP damage; Malefic Roar for fighters, Genius Wand/Glowing Wand for mages"]);
+  if(pr.div.length >= 2) recs.push(["Wind of Nature", "diver-heavy comp (" + pr.div.map(esc).join(", ") + ") — Wind of Nature for marksmen, Winter Truncheon for mages"]);
+  if(pr.ccN >= 3) recs.push(["Tough Boots", "heavy CC — Tough Boots + consider Purify over your default spell"]);
   if(!recs.length) return '';
   var chips = recs.map(function(r){
-    var ic = ISLUG[r[0]] ? '<i class="ic '+ISLUG[r[0]]+'"></i>' : '';
-    return '<div class="sitrow">'+ic+'<b>'+esc(r[0])+'</b><span>'+r[1]+'</span></div>';
+    var ic = ISLUG[r[0]] ? '<i class="ic ' + ISLUG[r[0]] + '"></i>' : '';
+    return '<div class="sitrow">' + ic + '<b>' + esc(r[0]) + '</b><span>' + r[1] + '</span></div>';
   }).join("");
-  var prof = "Enemy profile: "+phys.length+" physical · "+mages.length+" magic"+(heal.length? " · "+heal.length+" sustain":"")+(cc.length? " · "+cc.length+" CC":"")+".";
-  return '<div class="bp-sit"><div class="bp-blabel">🎯 vs this enemy team — '+esc(prof)+'</div>'+chips
-    + '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Standard itemization heuristics — swap into flex slots (usually items 5–6); boots stay.</div></div>';
+  var prof = "Enemy profile: " + pr.P.length + " physical · " + pr.M.length + " magic · " + pr.T.length + " frontline" + (pr.heal.length ? " · " + pr.heal.length + " sustain" : "") + (pr.ccN ? " · " + pr.ccN + " CC" : "") + ".";
+  return '<div class="bp-sit"><div class="bp-blabel">🎯 vs this enemy team — ' + esc(prof) + '</div>' + chips
+    + '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Damage types are derived from what each hero actually builds. Swap into flex slots (usually items 5–6); boots stay.</div></div>';
 }
 /* ---- build fit: which of the hero's presets suits this matchup ---- */
 var ANTIHEAL = ["Sea Halberd","Dominance Ice","Necklace of Durance"];
@@ -2594,6 +2692,7 @@ function buildPanelHtml(){
 /* ---- render ---- */
 var LANES = ["Jungle","EXP","Mid","Gold","Roam"];
 var roleFilter = "All";
+var pickOrder = "mid"; /* first | mid | last — when YOU pick */
 function laneOf(p){ var parts = (ROLE[p]||"").split("·"); return parts.length>1 ? parts[1].trim() : ""; }
 var myLane = null; /* null = auto (from locked pick) */
 function measEdge(pick, en){
@@ -2690,6 +2789,9 @@ function render(){
     var taken = enemies.concat(team, myPick ? [myPick] : []); /* never recommend picked/banned/enemy heroes */
     function sampleF(p){ var pr = STATS[p] ? STATS[p][1] : 1; return pr / (pr + 0.8); }
     function measEff(p, en){ var e = measEdge(p, en); return e === null ? null : e * sampleF(p); }
+    /* pick timing: picking 1st = they answer you, so matchup edges soften and meta-safety weighs more */
+    var edgeScale = pickOrder === "first" ? 0.7 : (pickOrder === "last" ? 1.15 : 1);
+    var priorScale = pickOrder === "first" ? 1.4 : 1;
     enemies.forEach(function(en){
       var lf = laneFactor(en);
       DB[en].c.forEach(function(pair, i){
@@ -2699,7 +2801,7 @@ function render(){
         var mp = measEff(pick, en);
         var confF = pair[2]===3 ? 1.0 : (pair[2]===2 ? 0.85 : 0.55); /* single-source opinions count less */
         var pts = weightOf(i) * 0.55 * confF;
-        if(mp !== null){ pts += Math.min(mp, 2.5); measCnt[pick] = (measCnt[pick]||0)+1; }
+        if(mp !== null){ pts += Math.min(mp, 2.5) * edgeScale; measCnt[pick] = (measCnt[pick]||0)+1; }
         if(kitReason(pick, en).length) pts += 0.2; /* our rule-based kit logic backs this pick */
         score[pick] += pts * lf;
         reasons[pick].push({vs:en, why:why, conf:(pair[2]||1), pp:(mp===null?undefined:mp)});
@@ -2710,7 +2812,7 @@ function render(){
         if(!score[pick]){ score[pick]=0; reasons[pick]=[]; measCnt[pick]=0; }
         if(reasons[pick].some(function(r){ return r.vs===en; })) return;
         var eff = mpp[1] * sampleF(pick); /* shrink by the pick's ranked sample size */
-        score[pick] += Math.min(eff, 2.5) * lf;
+        score[pick] += Math.min(eff, 2.5) * lf * edgeScale;
         measCnt[pick] = (measCnt[pick]||0)+1;
         reasons[pick].push({vs:en, why:"Measured +"+mpp[1].toFixed(1)+"pp win-rate edge (mlbb.io ranked data)", conf:3, pp:mpp[1], measOnly:true});
       });
@@ -2744,9 +2846,20 @@ function render(){
        Weighted so counter edges cannot carry a weak hero past solid picks. */
     Object.keys(score).forEach(function(p){
       var ts = TIERSCORE[p] ? TIERSCORE[p].v : 0;
-      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55));
+      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55 * priorScale));
       if(TIER[p] === "D") score[p] -= 1.5; /* measured bottom tier: last resort, never a medal */
     });
+    /* full-damage enemy comps (no frontline): lockdown, dive and frontline picks get the edge;
+       immobile squishy backliners get demoted — they are what this comp feeds on */
+    var prF = compProfile();
+    if(prF && prF.fullDamage){
+      Object.keys(score).forEach(function(p){
+        var primP = (ROLE[p] || "").split("·")[0].trim();
+        if(CCLIST.indexOf(p) >= 0) score[p] += 0.25;
+        if(TANKS.indexOf(p) >= 0 || DIVERS.indexOf(p) >= 0) score[p] += 0.15;
+        if((primP === "Marksman" || primP === "Mage") && !(KITS[p] && KITS[p].t && KITS[p].t.mob && KITS[p].t.mob.length)) score[p] -= 0.15;
+      });
+    }
     /* when you've staked a lane, off-lane picks get demoted */
     if(myLane){
       Object.keys(score).forEach(function(p){
@@ -2779,10 +2892,36 @@ function render(){
     } else {
       verdict = ' <b>'+esc(lead)+' leads narrowly</b> ('+gap.toFixed(1)+' pts ahead of '+esc(second)+') — the balanced draft below helps you choose by position.';
     }
+    if(pickOrder === "first") verdict += ' <span class="vl">You pick 1st — safe high-tier picks weighted, matchup edges softened.</span>';
+    else if(pickOrder === "last") verdict += ' <span class="vl">You pick last — counter mode: matchup edges amplified.</span>';
     if(team.length || myPick){
       verdict += missingLanes.length
         ? ' <span class="vl">Your team still needs: '+missingLanes.join(", ")+'.</span>'
         : ' <span class="vl">All positions covered — flex your best fit.</span>';
+    }
+
+    /* enemy damage profile strip (v21) */
+    var profHtml = '';
+    if(enemies.length >= 2){
+      var pr2 = compProfile();
+      var tot2 = Math.max(1, pr2.P.length + pr2.M.length + pr2.T.length);
+      var bits = [];
+      if(pr2.crit.length) bits.push("crit: " + pr2.crit.slice(0,2).map(esc).join(", "));
+      if(pr2.aspd.length) bits.push("atk-speed: " + pr2.aspd.slice(0,2).map(esc).join(", "));
+      if(pr2.heal.length) bits.push("sustain: " + pr2.heal.slice(0,2).map(esc).join(", "));
+      if(pr2.ccN) bits.push(pr2.ccN + " CC");
+      var ptxt;
+      if(pr2.fullDamage){
+        ptxt = '⚠️ <b>Full damage, no frontline</b> — ' + pr2.dmg + ' damage threats. They melt full-damage builds in the opener; you win with <b>lockdown, dive and sustain</b>. Every build plan below already inserts survival items.';
+      } else {
+        ptxt = '<b>' + pr2.P.length + ' physical · ' + pr2.M.length + ' magic · ' + pr2.T.length + ' frontline</b>' + (bits.length ? ' — ' + bits.join(" · ") : '');
+      }
+      profHtml = '<div class="profrow" title="enemy damage profile — derived from what each hero actually builds">'
+        + '<div class="profbar">'
+        + '<i class="seg sp" style="width:' + (pr2.P.length / tot2 * 100).toFixed(0) + '%"></i>'
+        + '<i class="seg sm" style="width:' + (pr2.M.length / tot2 * 100).toFixed(0) + '%"></i>'
+        + '<i class="seg st" style="width:' + (pr2.T.length / tot2 * 100).toFixed(0) + '%"></i>'
+        + '</div><div class="proftxt">' + ptxt + '</div></div>';
     }
 
     var balChips = [];
@@ -2813,6 +2952,10 @@ function render(){
       + '<span class="lf-lbl">Your lane:</span>'
       + '<button class="rfbtn'+(myLane?'':' on')+'" data-l="">Auto'+(myLaneNow()? '·'+myLaneNow() : '')+'</button>'
       + LANES.map(function(l){ return '<button class="rfbtn'+(myLane===l?' on':'')+'" data-l="'+l+'">'+l+'</button>'; }).join("")
+      + '</span>';
+    var orderSel = '<span class="rfbar ofbar" title="When do YOU pick? 1st = they answer you, so safe high-tier picks get weighted and matchup edges soften. Last = hard counter time: matchup edges amplify.">'
+      + '<span class="lf-lbl">You pick:</span>'
+      + [["first","1st"],["mid","Mid"],["last","Last"]].map(function(o){ return '<button class="rfbtn'+(pickOrder===o[0]?" on":"")+'" data-o="'+o[0]+'">'+o[1]+'</button>'; }).join("")
       + '</span>';
     var grid = show.length
       ? '<div class="rec-grid">' + show.map(function(pick, idx){
@@ -2870,8 +3013,9 @@ function render(){
       + '<span class="csub">vs '+esc(enemies.join(", "))+'</span>'
       + '<button class="cpk-clear" id="cpkClear" title="Remove all enemies">✕ clear enemies</button></div>'
       + '<div class="verdict">'+verdict+'</div>'
-      + balRow + laneSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + profHtml
+      + balRow + laneSel + orderSel + rfbtns + grid
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters. The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
@@ -2933,6 +3077,9 @@ function render(){
   });
   Array.prototype.forEach.call(resEl.querySelectorAll(".lfbar .rfbtn"), function(el){
     el.onclick = function(ev){ ev.stopPropagation(); myLane = el.getAttribute("data-l") || null; render(); };
+  });
+  Array.prototype.forEach.call(resEl.querySelectorAll(".ofbar .rfbtn"), function(el){
+    el.onclick = function(ev){ ev.stopPropagation(); pickOrder = el.getAttribute("data-o") || "mid"; render(); };
   });
   Array.prototype.forEach.call(resEl.querySelectorAll(".pickbtn"), function(el){
     el.onclick = function(){ lockPick(el.getAttribute("data-h")); };
