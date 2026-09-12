@@ -2430,32 +2430,36 @@ function banIntelHtml(){
   var reads = banReads();
   var rows = reads.map(function(r){
     var head;
-    if(r.banRate >= 20 && !r.planned.length){
-      head = '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of ranked games: standard meta ban, little draft signal.';
-    } else if(r.banRate >= 20 && r.planned.length){
-      var pn2 = r.planned.map(function(p){ return esc(p.h); }).join(", ");
-      head = '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of games (partly a meta ban), but also a top counter of <b>'+pn2+'</b>: keep them on your radar.';
-    } else if(r.planned.length){
+    if(!r.planned.length){
+      head = r.banRate >= 20
+        ? '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of ranked games: standard meta ban, little draft signal.'
+        : '<b>'+esc(r.b)+'</b> — no strong read from our counter data.';
+    } else {
       var names = r.planned.map(function(p){ return esc(p.h); }).join(", ");
       var answers = [];
       r.planned.forEach(function(p){
         (DB[p.h].c || []).slice(0, 3).forEach(function(pair){
-          if(answers.length < 4 && bans.indexOf(pair[0]) < 0 && enemies.indexOf(pair[0]) < 0
-            && team.indexOf(pair[0]) < 0 && pair[0] !== myPick && answers.indexOf(pair[0]) < 0 && pair[0] !== r.b) answers.push(pair[0]);
+          if(answers.length < 8 && bans.indexOf(pair[0]) < 0 && enemies.indexOf(pair[0]) < 0
+            && team.indexOf(pair[0]) < 0 && pair[0] !== myPick && !answers.some(function(a){ return a.h === pair[0]; }) && pair[0] !== r.b) answers.push({h: pair[0], vs: p.h});
         });
       });
-      head = '<b>'+esc(r.b)+'</b> — top counter of <b>'+names+'</b>: they may be planning to play them.'
-        + (answers.length ? ' Available answers: ' + answers.map(function(a){ return '<span class="pchip" data-h="'+esc(a)+'" title="'+esc(a)+' — click for build">'+avatar(a)+esc(a)+'</span>'; }).join(" ") : '');
-    } else {
-      head = '<b>'+esc(r.b)+'</b> — no strong read from our counter data.';
+      answers.sort(function(a, b){
+        return ((TIERSCORE[b.h] ? TIERSCORE[b.h].v : 0) - (TIERSCORE[a.h] ? TIERSCORE[a.h].v : 0));
+      });
+      answers = answers.slice(0, 4);
+      var lead = r.banRate >= 20
+        ? '<b>'+esc(r.b)+'</b> — banned in '+r.banRate.toFixed(0)+'% of games (partly a meta ban), but also a top counter of <b>'+names+'</b>: keep them on your radar.'
+        : '<b>'+esc(r.b)+'</b> — top counter of <b>'+names+'</b>: they may be planning to play them.';
+      head = lead + (answers.length ? ' Available answers: ' + answers.map(function(a){
+          return '<span class="pchip" data-h="'+esc(a.h)+'" title="'+esc(a.h)+' — counters predicted pick '+esc(a.vs)+' · measured tier '+(TIER[a.h] || "–")+' · click for build">'+avatar(a.h)+esc(a.h)+'</span>';
+        }).join(" ") : '');
     }
     return '<div class="bi-row">'+head+'</div>';
   }).join("");
-  var firstNote = '';
-  if(pickOrder === "first") firstNote = '<div class="bi-note">You pick 1st — you lock before seeing their picks. Treat their bans above as your scouting report, lean safe/flex picks (see board), and spend your ban on the biggest threat of the patch (advisor below).</div>';
+  var useNote = '<div class="bi-note"><b>How to use this:</b> a read, not a fact — people also ban whatever is simply strong. Picking after them (Mid/Last)? Wait for their real locks: the counter board below is ground truth. Picking 1st? Hedge — among the safe/flex picks the board already weights, prefer ones that also cover the heroes above.</div>';
   return '<div class="card bicard"><div class="cardhead"><b>Enemy ban read</b>'
     + '<span class="csub">what their bans tell you about their plan</span></div>'
-    + rows + firstNote
+    + rows + useNote
     + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Method: people ban the counters of heroes they intend to play. For each enemy ban we list the heroes it is a top-4 counter of (3-source ensemble; banned and taken heroes excluded). Bans on 20%+ ban-rate heroes are treated as meta noise.</div></div>';
 }
 function banAdvisorHtml(){
