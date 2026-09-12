@@ -578,6 +578,46 @@
   .top-card::before{content:none;}
   table tr:hover td{background:rgba(255,255,255,.018);}
   @media(max-width:640px){ nav{position:static;} }
+
+/* ---- v20 draft pad: slot editor + picker ---- */
+.draftpad{position:relative;padding:16px 18px 14px;}
+.pad-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.pad-vs{display:flex;gap:20px;align-items:stretch;}
+.pad-side{flex:1;min-width:0;}
+.vs-mid{align-self:center;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.14em;padding:0 2px;}
+.slotrow{display:flex;flex-wrap:wrap;gap:8px;}
+.slotrow.bans{margin-bottom:16px;}
+.dslot{position:relative;box-sizing:border-box;width:104px;min-height:78px;padding:8px 4px 6px;border:1px dashed var(--line);border-radius:10px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--muted);font:inherit;transition:border-color .15s,color .15s;}
+.dslot:hover{border-color:var(--gold);color:var(--fg);}
+.dslot .plus{font-size:17px;line-height:1;opacity:.85;}
+.dslot .shint{font-size:10.5px;letter-spacing:.02em;}
+.dslot.filled{border-style:solid;background:var(--card2);color:var(--fg);}
+.dslot.you{border-color:rgba(240,180,41,.55);}
+.dslot .sname{font-size:12px;font-weight:600;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dslot .srole{font-size:10px;color:var(--muted);}
+.dslot .stag{font-size:9.5px;font-weight:700;color:var(--gold);letter-spacing:.1em;}
+.dslot .sx{position:absolute;top:3px;right:6px;font-size:11px;color:var(--muted);padding:2px;line-height:1;}
+.dslot .sx:hover{color:var(--fg);}
+.dslot .av{width:34px;height:34px;}
+.picker{position:fixed;z-index:70;display:none;width:308px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.5);overflow:hidden;}
+.picker.open{display:block;}
+.picker-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--fg);}
+.picker-head button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;}
+.picker-head button:hover{color:var(--fg);}
+.picker input{width:100%;box-sizing:border-box;display:block;margin:0;padding:10px 12px;background:var(--bg);border:none;border-bottom:1px solid var(--line);color:var(--fg);font:inherit;font-size:14px;outline:none;}
+.picker-list{max-height:290px;overflow-y:auto;}
+.picker-list .cpk-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:var(--fg);}
+.picker-list .cpk-opt:hover,.picker-list .cpk-opt.sel{background:var(--card2);}
+.picker-list .cpk-opt .ro{margin-left:auto;color:var(--muted);font-size:11px;}
+.picker-list .cpk-opt .tb{margin-left:6px;}
+.cur-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);}
+.cur-row .cbtn{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:7px 8px;cursor:pointer;font:inherit;font-size:12.5px;}
+.cur-row .cbtn:hover{border-color:var(--gold);}
+@media (max-width:720px){
+  .pad-vs{flex-direction:column;gap:10px;}
+  .dslot{width:86px;min-height:68px;}
+  .picker{width:262px;}
+}
 </style>
 </head>
 <body>
@@ -600,10 +640,10 @@
 <div class="wrap">
 
 <nav>
+  <a href="#counter">Draft Helper</a>
   <a href="#snapshot">Snapshot</a>
   <a href="#away">While You Were Away</a>
   <a href="#tiers">Tier Lists</a>
-  <a href="#counter">Draft Simulator</a>
   <a href="#builds">Builds (17 heroes)</a>
   <a href="#emblems">Emblems</a>
   <a href="#items">Item Swaps</a>
@@ -611,9 +651,42 @@
   <a href="#sources">Sources</a>
 </nav>
 
+<!-- ================= COUNTER PICKER ================= -->
+<section id="counter">
+  <h2><span class="num">01</span>Draft Helper — bans, counters &amp; builds <span class="tag live">LIVE TOOL</span></h2>
+  <p class="lead">Run your whole draft here. <b>Tap any slot:</b> enemies on the right, your team on the left, your pick in the <b>YOU</b> slot, bans on top. The <b>ban advisor</b>, <b>counter board</b> and hero <b>builds</b> update on every change — lock your hero and its build adapts to the enemy comp (anti-heal, armor, etc.). Click any hero anywhere to browse its build. Everything runs locally in this file.</p>
+  <div class="card draftpad" id="draftPad">
+  <div class="pad-top">
+    <div class="side-lbl grey">BANS <span class="side-note">— up to 10 · banned heroes never appear in any list</span></div>
+    <button id="draftClear" class="draft-clear" style="display:none;" title="Reset the whole draft — enemies, team, your pick and bans">Clear draft</button>
+  </div>
+  <div class="slotrow bans" id="banSlots"></div>
+  <div class="pad-vs">
+    <div class="pad-side">
+      <div class="side-lbl blue">YOUR TEAM <span class="side-note">— up to 4 teammates + you</span></div>
+      <div class="slotrow" id="teamSlots"></div>
+    </div>
+    <div class="vs-mid">VS</div>
+    <div class="pad-side">
+      <div class="side-lbl red">ENEMY TEAM <span class="side-note">— up to 5 · the board updates on every add</span></div>
+      <div class="slotrow" id="enemySlots"></div>
+    </div>
+  </div>
+  <div class="cpk-quick" id="cpkQuick"><span class="lbl">Quick enemies:</span></div>
+  <div class="cpk-empty" id="cpkMsg" style="display:none;"></div>
+  <div class="picker" id="slotPicker">
+    <div class="picker-head"><span id="pickerTitle">Add a hero</span><button id="pickerClose" title="Close">✕</button></div>
+    <input id="pickerInput" placeholder="Type a hero name…" autocomplete="off">
+    <div class="picker-list" id="pickerList"></div>
+  </div>
+</div>
+<div class="cpk-empty" id="cpkEmpty">Draft not started — tap a slot above: enemies (right), your team (left) or bans (top). The ban advisor, counter board and builds appear here as you go. <b>Tip:</b> add <i>Ling</i> as an enemy, then tap the YOU slot and pick <i>Saber</i> — every recommended hero is searchable too.</div>
+  <div id="cpkResults"></div>
+</section>
+
 <!-- ================= SNAPSHOT ================= -->
 <section id="snapshot">
-  <h2><span class="num">01</span>TL;DR — The 10 Heroes Defining the Meta</h2>
+  <h2><span class="num">02</span>TL;DR — The 10 Heroes Defining the Meta</h2>
   <p class="lead">Ranked stats (win/pick/ban) from live Season 41 data, cross-referenced with esports-oriented tier lists.</p>
   <div class="top-grid">
     <div class="top-card"><div class="row"><div class="portrait sm h-hirara"></div><div><div class="rank">#1</div><div class="name">Hirara <span class="tag new">NEW</span></div><div class="role">Jungle</div></div></div><div class="why">Season 41's new assassin. 52% ban rate overall — <b>79% at Mythical Glory+</b>. The most feared pick in the game.</div></div>
@@ -632,7 +705,7 @@
 
 <!-- ================= WHILE AWAY ================= -->
 <section id="away">
-  <h2><span class="num">02</span>While You Were Away</h2>
+  <h2><span class="num">03</span>While You Were Away</h2>
   <div class="cols">
     <div class="card">
       <div class="label">New heroes (roster now 133)</div>
@@ -669,7 +742,7 @@
 
 <!-- ================= TIER LISTS ================= -->
 <section id="tiers">
-  <h2><span class="num">03</span>Tier Lists by Role</h2>
+  <h2><span class="num">04</span>Tier Lists by Role</h2>
   <p class="lead">Computed by us from mlbb.io ranked data — all ranks, past 7 days (Aug 30, 2026). Strength = win rate above 50%, shrunk by sample size (pick rate), plus a ban-rate signal; tiers are relative ranks in the current meta (S = top ~6%). ▲/▼ marks disagreement with MLBBHub's editorial tier. Win rate shown next to each hero.</p>
   <div class="cols" id="tierCols"></div>
   <div class="card">
@@ -677,44 +750,6 @@
     <p class="note">Utility and sustain supports are running the game from roam (Marcel, Rafaela, Floryn, Estes all 53%+ WR). The jungle belongs to lockdown/utility assassins and the reworked Hanzo rather than pure burst. EXP is about split-push pressure and unkillable bruisers (Sun, Masha, Gloo). Mid favors zone/control mages (Zetian, Yve, Kadita, Gord). Gold lane is an on-hit marksman meta (Melissa, Hanabi) with magic-damage Kimmy as the flex pick.</p>
     <p class="note small">Editorial cross-checks we kept: Hayabusa is S+ in esports lists but 47.6% WR in ranked — great in coordinated hands, coin-flip in solo queue. Zhuxin is S in editorial lists but 47.7% WR in ranked — she needs a real front line.</p>
   </div>
-</section>
-
-<!-- ================= COUNTER PICKER ================= -->
-<section id="counter">
-  <h2><span class="num">04</span>Draft Simulator — bans, counters &amp; builds <span class="tag live">LIVE TOOL</span><button id="draftClear" class="draft-clear" style="display:none;" title="Reset the whole draft — enemies, teammates, your pick and bans">Clear draft</button></h2>
-  <p class="lead">Run your whole draft here. <b>Blue card:</b> add what your teammates locked (up to 4). <b>Red card:</b> add what the enemy team shows (up to 5). As you type, the tool builds you a <b>ban advisor</b> (who threatens <i>your</i> lineup), a <b>counter board</b> for your pick, and — once you lock a hero with ＋ Pick — its <b>builds</b>, adapted to the enemy comp (anti-heal, armor, etc.). Click any hero anywhere to browse its build. All 133 heroes are searchable, including every hero the tool recommends. Everything runs locally in this file.</p>
-  <div class="draft-cols">
-    <div class="card dcard-blue">
-      <div class="side-lbl blue">YOUR TEAM <span class="side-note">— teammates (you pick below)</span></div>
-      <div class="cpk-wrap">
-        <input id="teamInput" placeholder="Add a teammate's pick… (optional)" autocomplete="off">
-        <div class="cpk-drop" id="teamDrop"></div>
-      </div>
-      <div class="enemy-chips" id="teamChips"></div>
-      <div class="cpk-empty" id="teamMsg" style="display:none;"></div>
-    </div>
-    <div class="card dcard-red">
-      <div class="side-lbl red">ENEMY TEAM <span class="side-note">— up to 5</span></div>
-      <div class="cpk-wrap">
-        <input id="cpkInput" placeholder="Add an enemy pick… (e.g. Ling, Gloo, Fanny)" autocomplete="off">
-        <div class="cpk-drop" id="cpkDrop"></div>
-      </div>
-      <div class="cpk-quick" id="cpkQuick"><span class="lbl">Quick add:</span></div>
-      <div class="enemy-chips" id="enemyChips"></div>
-      <div class="cpk-empty" id="cpkMsg" style="display:none;"></div>
-    </div>
-  </div>
-  <div class="card banbar-card">
-      <div class="side-lbl grey">BANNED IN THIS DRAFT <span class="side-note">— removed from every list (Mythic: 5 per side, up to 10)</span></div>
-      <div class="cpk-wrap">
-        <input id="banInput" placeholder="Add a banned hero… (e.g. Ling, Belerick)" autocomplete="off">
-        <div class="cpk-drop" id="banDrop"></div>
-      </div>
-      <div class="enemy-chips" id="banChips"></div>
-      <div class="cpk-empty" id="banMsg" style="display:none;"></div>
-    </div>
-  <div class="cpk-empty" id="cpkEmpty">Draft not started — add enemies (red), teammates (blue) or banned heroes (grey) above. The ban advisor, counter board and builds appear here as you go. <b>Tip:</b> add <i>Ling</i> as an enemy, then search <i>Saber</i> — every recommended hero is searchable too.</div>
-  <div id="cpkResults"></div>
 </section>
 
 <!-- ================= BUILDS ================= -->
@@ -1945,9 +1980,6 @@ var POP = ["Ling","Gusion","Fanny","Khufra","Hirara","Gloo","Sun","Marcel","Hanz
 var QUICK = POP.slice();
 
 var enemies = [];
-var input = document.getElementById("cpkInput");
-var drop = document.getElementById("cpkDrop");
-var chipsEl = document.getElementById("enemyChips");
 var quickEl = document.getElementById("cpkQuick");
 var emptyEl = document.getElementById("cpkEmpty");
 var resEl = document.getElementById("cpkResults");
@@ -1961,57 +1993,8 @@ function avatar(name, lg){
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
 
 /* ---- dropdown: relevance-sorted, keyboard-navigable ---- */
-var dropKeys = [], selIdx = 0;
 function popRank(k){ var i = POP.indexOf(k); return i < 0 ? 999 : i; }
-function showDrop(q){
-  var td=document.getElementById("teamDrop"); if(td) td.style.display="none";
-  var bd=document.getElementById("banDrop"); if(bd) bd.style.display="none";
-  q = q.toLowerCase().trim();
-  var keys = Object.keys(DB).filter(function(k){
-    return enemies.indexOf(k)<0 && team.indexOf(k)<0 && k!==myPick && bans.indexOf(k)<0 && (q==="" || k.toLowerCase().indexOf(q)>=0);
-  });
-  keys.sort(function(a,b){
-    var qa = q==="" ? 0 : (a.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    var qb = q==="" ? 0 : (b.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    return (qa-qb) || (popRank(a)-popRank(b)) || a.localeCompare(b);
-  });
-  keys = keys.slice(0,10);
-  if(!keys.length){ drop.style.display="none"; drop.innerHTML=""; dropKeys=[]; return; }
-  dropKeys = keys;
-  if(selIdx > keys.length-1) selIdx = keys.length-1;
-  drop.innerHTML = keys.map(function(k, i){
-    var label = esc(k);
-    if(q){
-      var pos = k.toLowerCase().indexOf(q);
-      if(pos>=0) label = esc(k.slice(0,pos))+"<b>"+esc(k.slice(pos,pos+q.length))+"</b>"+esc(k.slice(pos+q.length));
-    }
-    return '<div class="cpk-opt'+(i===selIdx?" sel":"")+'" data-h="'+esc(k)+'">'+avatar(k)+'<span>'+label+'</span><span class="ro">'+(ROLE[k]||"")+'</span></div>';
-  }).join("");
-  drop.style.display = "block";
-  Array.prototype.forEach.call(drop.children, function(el, i){
-    el.onclick = function(){ addEnemy(el.getAttribute("data-h")); selIdx=0; };
-    el.onmouseenter = function(){ selIdx = i; paintSel(); };
-  });
-}
-function paintSel(){
-  Array.prototype.forEach.call(drop.children, function(el, i){
-    if(i===selIdx) el.classList.add("sel"); else el.classList.remove("sel");
-  });
-}
-input.addEventListener("input", function(){ selIdx=0; showDrop(input.value); });
-input.addEventListener("focus", function(){ selIdx=0; showDrop(input.value); });
-input.addEventListener("keydown", function(e){
-  if(e.key==="ArrowDown" && drop.style.display==="block"){ selIdx=Math.min(selIdx+1, dropKeys.length-1); paintSel(); e.preventDefault(); }
-  else if(e.key==="ArrowUp" && drop.style.display==="block"){ selIdx=Math.max(selIdx-1, 0); paintSel(); e.preventDefault(); }
-  else if(e.key==="Enter"){
-    if(drop.style.display==="block" && dropKeys[selIdx]){ addEnemy(dropKeys[selIdx]); selIdx=0; e.preventDefault(); }
-  }
-  else if(e.key==="Escape"){ drop.style.display="none"; }
-});
-document.addEventListener("click", function(e){
-  if(!e.target.closest || !e.target.closest(".cpk-wrap")) drop.style.display="none";
-});
-
+/* hero picker lives in the slot editor below (v20) */
 /* ---- add/remove enemies ---- */
 function addEnemy(name){
   if(enemies.indexOf(name)>=0) return;
@@ -2019,8 +2002,6 @@ function addEnemy(name){
   if(team.indexOf(name)>=0 || name===myPick){ cpkMsg(name+" is already on YOUR team."); return; }
   if(enemies.length>=5){ cpkMsg("Max 5 enemies — remove one first (tap ✕ on a chip)."); return; }
   enemies.push(name);
-  input.value = "";
-  drop.style.display = "none";
   cpkMsg("");
   render();
 }
@@ -2046,153 +2027,245 @@ QUICK.forEach(function(name){
 var team = [];        /* teammates (up to 4) */
 var myPick = null;    /* your locked hero */
 var buildView = null; /* hero whose build is open in browse mode */
-var teamInput = document.getElementById("teamInput");
-var teamDrop = document.getElementById("teamDrop");
-var teamChipsEl = document.getElementById("teamChips");
-var teamMsgEl = document.getElementById("teamMsg");
-
-var teamKeys = [], teamSel = 0;
-function showTeamDrop(q){
-  var ed=document.getElementById("cpkDrop"); if(ed) ed.style.display="none";
-  var bd2=document.getElementById("banDrop"); if(bd2) bd2.style.display="none";
-  q = q.toLowerCase().trim();
-  var taken = enemies.concat(team, bans, myPick ? [myPick] : []);
-  var keys = Object.keys(DB).filter(function(k){
-    return taken.indexOf(k)<0 && (q==="" || k.toLowerCase().indexOf(q)>=0);
-  });
-  keys.sort(function(a,b){
-    var qa = q==="" ? 0 : (a.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    var qb = q==="" ? 0 : (b.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    return (qa-qb) || (popRank(a)-popRank(b)) || a.localeCompare(b);
-  });
-  keys = keys.slice(0,10);
-  if(!keys.length){ teamDrop.style.display="none"; teamDrop.innerHTML=""; teamKeys=[]; return; }
-  teamKeys = keys;
-  if(teamSel > keys.length-1) teamSel = keys.length-1;
-  teamDrop.innerHTML = keys.map(function(k, i){
-    var label = esc(k);
-    if(q){
-      var pos = k.toLowerCase().indexOf(q);
-      if(pos>=0) label = esc(k.slice(0,pos))+"<b>"+esc(k.slice(pos,pos+q.length))+"</b>"+esc(k.slice(pos+q.length));
-    }
-    return '<div class="cpk-opt'+(i===teamSel?" sel":"")+'" data-h="'+esc(k)+'">'+avatar(k)+'<span>'+label+'</span><span class="ro">'+(ROLE[k]||"")+'</span></div>';
-  }).join("");
-  teamDrop.style.display = "block";
-  Array.prototype.forEach.call(teamDrop.children, function(el, i){
-    el.onclick = function(){ addTeam(el.getAttribute("data-h")); teamSel=0; };
-    el.onmouseenter = function(){ teamSel = i; paintTeamSel(); };
-  });
-}
-function paintTeamSel(){
-  Array.prototype.forEach.call(teamDrop.children, function(el, i){
-    if(i===teamSel) el.classList.add("sel"); else el.classList.remove("sel");
-  });
-}
-
-function teamMsg(t){ teamMsgEl.textContent = t; teamMsgEl.style.display = t ? "block" : "none"; }
+/* ================= SLOT EDITOR (v20) ================= */
+var bans = [];       /* up to 10 */
 function addTeam(name){
   if(team.indexOf(name)>=0) return;
-  if(enemies.indexOf(name)>=0){ teamMsg(name+" is on the enemy team."); return; }
-  if(myPick===name){ teamMsg(name+" is already your pick."); return; }
-  if(bans.indexOf(name)>=0){ teamMsg(name+" is banned in this draft."); return; }
-  if(team.length>=4){ teamMsg("Max 4 teammates — you are the 5th."); return; }
-  team.push(name);
-  teamInput.value = ""; teamDrop.style.display = "none"; teamMsg("");
-  render();
+  if(enemies.indexOf(name)>=0){ cpkMsg(name+" is on the enemy team."); return; }
+  if(myPick===name){ cpkMsg(name+" is already your pick."); return; }
+  if(bans.indexOf(name)>=0){ cpkMsg(name+" is banned in this draft."); return; }
+  if(team.length>=4){ cpkMsg("Max 4 teammates — you are the 5th."); return; }
+  team.push(name); cpkMsg(""); render();
 }
 function removeTeam(name){ team = team.filter(function(t){return t!==name;}); render(); }
-teamInput.addEventListener("input", function(){ teamSel=0; showTeamDrop(teamInput.value); });
-teamInput.addEventListener("focus", function(){ teamSel=0; showTeamDrop(teamInput.value); });
-teamInput.addEventListener("keydown", function(e){
-  if(e.key==="ArrowDown" && teamDrop.style.display==="block"){ teamSel=Math.min(teamSel+1, teamKeys.length-1); paintTeamSel(); e.preventDefault(); }
-  else if(e.key==="ArrowUp" && teamDrop.style.display==="block"){ teamSel=Math.max(teamSel-1, 0); paintTeamSel(); e.preventDefault(); }
-  else if(e.key==="Enter"){
-    if(teamDrop.style.display==="block" && teamKeys[teamSel]){ addTeam(teamKeys[teamSel]); teamSel=0; e.preventDefault(); }
-  }
-  else if(e.key==="Escape"){ teamDrop.style.display="none"; }
-});
-document.addEventListener("click", function(e){
-  var t=e.target; if(!t.closest || !t.closest("#teamInput, #teamDrop")) teamDrop.style.display="none";
-});
+function addBan(name){
+  if(bans.indexOf(name)>=0) return;
+  if(enemies.indexOf(name)>=0){ cpkMsg(name+" is on the enemy team."); return; }
+  if(team.indexOf(name)>=0){ cpkMsg(name+" is on your team."); return; }
+  if(myPick===name){ cpkMsg(name+" is your locked pick."); return; }
+  if(bans.length>=10){ cpkMsg("Max 10 bans (5 per side)."); return; }
+  bans.push(name); cpkMsg(""); render();
+}
+function removeBan(name){ bans = bans.filter(function(b){return b!==name;}); render(); }
 
-/* ---- bans: heroes removed from this draft ---- */
-var bans = [];
-var banInput = document.getElementById("banInput");
-var banDrop = document.getElementById("banDrop");
-var banChipsEl = document.getElementById("banChips");
-var banMsgEl = document.getElementById("banMsg");
-var banKeys = [], banSel = 0;
-function showBanDrop(q){
-  var td=document.getElementById("teamDrop"); if(td) td.style.display="none";
-  var bd=document.getElementById("banDrop"); if(bd) bd.style.display="none";
-  var ed=document.getElementById("cpkDrop"); if(ed) ed.style.display="none";
-  var bd2=document.getElementById("banDrop"); if(bd2) bd2.style.display="none";
-  q = q.toLowerCase().trim();
-  var taken = enemies.concat(team, bans, myPick ? [myPick] : []);
+var picker = { open:false, kind:null, idx:-1, keys:[], sel:0 };
+function slotOccupant(kind, idx){
+  if(kind === "enemy") return enemies[idx] || null;
+  if(kind === "ban") return bans[idx] || null;
+  if(kind === "you") return myPick;
+  if(kind === "team") return team[idx] || null;
+  return null;
+}
+function pickerTitleFor(kind){
+  return kind === "enemy" ? "ADD AN ENEMY" : kind === "ban" ? "ADD A BAN"
+    : kind === "you" ? "YOUR PICK — YOU" : "ADD A TEAMMATE";
+}
+function openPicker(kind, idx){
+  picker.open = true; picker.kind = kind; picker.idx = (typeof idx === "number") ? idx : -1;
+  cpkMsg("");
+  var pt = document.getElementById("pickerTitle");
+  if(pt) pt.textContent = pickerTitleFor(kind);
+  var pk = document.getElementById("slotPicker");
+  if(pk) pk.classList.add("open");
+  var pi = document.getElementById("pickerInput");
+  if(pi){ pi.value = ""; if(pi.focus) pi.focus(); }
+  renderPicker("");
+  placePicker();
+}
+function closePicker(){
+  picker.open = false;
+  var pk = document.getElementById("slotPicker");
+  if(pk) pk.classList.remove("open");
+  var pi = document.getElementById("pickerInput");
+  if(pi) pi.value = "";
+}
+function placePicker(){
+  var pk = document.getElementById("slotPicker");
+  if(!pk || !pk.classList.contains("open") || !document.querySelector) return;
+  var slot = document.querySelector('.dslot[data-k="'+picker.kind+'"][data-i="'+picker.idx+'"]');
+  if(!slot || !slot.getBoundingClientRect) return;
+  var r = slot.getBoundingClientRect();
+  var vw = (window && window.innerWidth) ? window.innerWidth : 1280;
+  var vh = (window && window.innerHeight) ? window.innerHeight : 900;
+  var w = pk.offsetWidth || 308;
+  var ph = pk.offsetHeight || 380;
+  var left = Math.max(8, Math.min(r.left, vw - w - 8));
+  var top = r.bottom + 6;
+  if(top + ph > vh - 8) top = Math.max(8, r.top - ph - 6); /* flip above when it would overflow */
+  pk.style.left = left + "px";
+  pk.style.top = top + "px";
+}
+function renderPicker(q){
+  q = (q || "").toLowerCase().trim();
+  var listEl = document.getElementById("pickerList");
+  if(!listEl) return;
+  var cur = slotOccupant(picker.kind, picker.idx);
+  var taken = enemies.concat(team, myPick ? [myPick] : [], bans);
+  if(cur) taken = taken.filter(function(h){ return h !== cur; });
   var keys = Object.keys(DB).filter(function(k){
-    return taken.indexOf(k)<0 && (q==="" || k.toLowerCase().indexOf(q)>=0);
+    return taken.indexOf(k) < 0 && (q === "" || k.toLowerCase().indexOf(q) >= 0);
   });
-  keys.sort(function(a,b){
-    var qa = q==="" ? 0 : (a.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    var qb = q==="" ? 0 : (b.toLowerCase().indexOf(q)===0 ? 0 : 1);
-    return (qa-qb) || (popRank(a)-popRank(b)) || a.localeCompare(b);
+  keys.sort(function(a, b){
+    var qa = q === "" ? 0 : (a.toLowerCase().indexOf(q) === 0 ? 0 : 1);
+    var qb = q === "" ? 0 : (b.toLowerCase().indexOf(q) === 0 ? 0 : 1);
+    return (qa - qb) || (popRank(a) - popRank(b)) || a.localeCompare(b);
   });
-  keys = keys.slice(0,10);
-  if(!keys.length){ banDrop.style.display="none"; banDrop.innerHTML=""; banKeys=[]; return; }
-  banKeys = keys;
-  if(banSel > keys.length-1) banSel = keys.length-1;
-  banDrop.innerHTML = keys.map(function(k, i){
+  picker.keys = keys.slice(0, 10);
+  picker.sel = 0;
+  var html = "";
+  if(cur){
+    html += '<div class="cur-row"><button class="cbtn" data-act="view" data-h="'+esc(cur)+'">View '+esc(cur)+' build</button><button class="cbtn" data-act="remove" data-h="'+esc(cur)+'">Remove</button></div>';
+  }
+  html += picker.keys.map(function(k, i){
     var label = esc(k);
     if(q){
       var pos = k.toLowerCase().indexOf(q);
-      if(pos>=0) label = esc(k.slice(0,pos))+"<b>"+esc(k.slice(pos,pos+q.length))+"</b>"+esc(k.slice(pos+q.length));
+      if(pos >= 0) label = esc(k.slice(0, pos))+"<b>"+esc(k.slice(pos, pos+q.length))+"</b>"+esc(k.slice(pos+q.length));
     }
-    return '<div class="cpk-opt'+(i===banSel?" sel":"")+'" data-h="'+esc(k)+'">'+avatar(k)+'<span>'+label+'</span><span class="ro">'+(ROLE[k]||"")+'</span></div>';
+    var tb = TIER[k] ? '<span class="tb tb-'+TIER[k]+'">'+TIER[k]+'</span>' : '';
+    return '<div class="cpk-opt" data-pi="'+i+'" data-h="'+esc(k)+'">'+avatar(k)+'<span>'+label+'</span><span class="ro">'+(ROLE[k] || "")+'</span>'+tb+'</div>';
   }).join("");
-  banDrop.style.display = "block";
-  Array.prototype.forEach.call(banDrop.children, function(el, i){
-    el.onclick = function(){ addBan(el.getAttribute("data-h")); banSel=0; };
-    el.onmouseenter = function(){ banSel = i; paintBanSel(); };
+  if(!picker.keys.length && !cur) html = '<div class="cpk-empty" style="margin:10px 12px;">No heroes match — check the spelling.</div>';
+  listEl.innerHTML = html;
+  paintPickerSel();
+}
+function paintPickerSel(){
+  var listEl = document.getElementById("pickerList");
+  if(!listEl || !listEl.querySelectorAll) return;
+  Array.prototype.forEach.call(listEl.querySelectorAll(".cpk-opt"), function(el){
+    if(parseInt(el.getAttribute("data-pi"), 10) === picker.sel) el.classList.add("sel");
+    else el.classList.remove("sel");
   });
 }
-function paintBanSel(){
-  Array.prototype.forEach.call(banDrop.children, function(el, i){
-    if(i===banSel) el.classList.add("sel"); else el.classList.remove("sel");
-  });
-}
-function banMsg(t){ banMsgEl.textContent = t; banMsgEl.style.display = t ? "block" : "none"; }
-function addBan(name){
-  if(bans.indexOf(name)>=0) return;
-  if(enemies.indexOf(name)>=0){ banMsg(name+" is on the enemy team."); return; }
-  if(team.indexOf(name)>=0){ banMsg(name+" is on your team."); return; }
-  if(myPick===name){ banMsg(name+" is your locked pick."); return; }
-  if(bans.length>=10){ banMsg("Max 10 bans (5 per side)."); return; }
-  bans.push(name);
-  banInput.value = "";
-  banDrop.style.display = "none";
-  banMsg("");
+function pickSlotHero(name){
+  var kind = picker.kind, idx = picker.idx;
+  var cur = slotOccupant(kind, idx);
+  closePicker();
+  if(cur === name){ render(); return; }
+  if(bans.indexOf(name) >= 0){ cpkMsg(name+" is banned in this draft."); return; }
+  if(enemies.indexOf(name) >= 0){ cpkMsg(name+" is already an enemy pick."); return; }
+  if(team.indexOf(name) >= 0){ cpkMsg(name+" is already on your team."); return; }
+  if(myPick === name){ cpkMsg(name+" is your locked pick."); return; }
+  if(kind === "enemy"){
+    if(idx >= 0 && idx < enemies.length) enemies[idx] = name;
+    else if(enemies.length < 5) enemies.push(name);
+  } else if(kind === "ban"){
+    if(idx >= 0 && idx < bans.length) bans[idx] = name;
+    else if(bans.length < 10) bans.push(name);
+  } else if(kind === "you"){
+    myPick = name; buildView = null;
+  } else {
+    if(idx >= 0 && idx < team.length) team[idx] = name;
+    else if(team.length < 4) team.push(name);
+  }
+  cpkMsg("");
   render();
 }
-function removeBan(name){ bans = bans.filter(function(b){return b!==name;}); render(); }
-banInput.addEventListener("input", function(){ banSel=0; showBanDrop(banInput.value); });
-banInput.addEventListener("focus", function(){ banSel=0; showBanDrop(banInput.value); });
-banInput.addEventListener("keydown", function(e){
-  if(e.key==="ArrowDown" && banDrop.style.display==="block"){ banSel=Math.min(banSel+1, banKeys.length-1); paintBanSel(); e.preventDefault(); }
-  else if(e.key==="ArrowUp" && banDrop.style.display==="block"){ banSel=Math.max(banSel-1, 0); paintBanSel(); e.preventDefault(); }
-  else if(e.key==="Enter"){
-    if(banDrop.style.display==="block" && banKeys[banSel]){ addBan(banKeys[banSel]); banSel=0; e.preventDefault(); }
+function removeSlot(kind, idx){
+  var cur = slotOccupant(kind, idx);
+  if(cur === null || cur === undefined) return;
+  if(kind === "enemy") removeEnemy(cur);
+  else if(kind === "ban") removeBan(cur);
+  else if(kind === "you"){ myPick = null; render(); }
+  else removeTeam(cur);
+}
+function slotHtml(kind, idx, h){
+  if(h){
+    var tag = kind === "you" ? '<span class="stag">YOU</span>' : '<span class="srole">'+esc(kind === "ban" ? "ban" : (ROLE[h] || ""))+'</span>';
+    return '<button class="dslot filled '+kind+'" data-k="'+kind+'" data-i="'+idx+'" title="'+esc(h)+' — click to replace or view its build">'
+      + avatar(h) + '<span class="sname">'+esc(h)+'</span>' + tag
+      + '<span class="sx" data-x="1" title="Remove '+esc(h)+'">✕</span></button>';
   }
-  else if(e.key==="Escape"){ banDrop.style.display="none"; }
-});
-document.addEventListener("click", function(e){
-  var t=e.target;
-  if(!t.closest || !t.closest("#banInput, #banDrop")) banDrop.style.display="none";
-});
+  var hint = kind === "you" ? "lock YOUR pick" : kind === "ban" ? "add ban" : kind === "enemy" ? "add enemy" : "add teammate";
+  return '<button class="dslot empty '+kind+'" data-k="'+kind+'" data-i="'+idx+'" title="'+hint+'"><span class="plus">+</span><span class="shint">'+hint+'</span></button>';
+}
+function wireSlots(containerEl){
+  if(!containerEl || !containerEl.querySelectorAll) return;
+  Array.prototype.forEach.call(containerEl.querySelectorAll(".dslot"), function(el){
+    el.onclick = function(ev){
+      var kind = el.getAttribute("data-k");
+      var idx = parseInt(el.getAttribute("data-i"), 10);
+      if(ev && ev.target && ev.target.getAttribute && ev.target.getAttribute("data-x")){ removeSlot(kind, idx); return; }
+      openPicker(kind, idx);
+    };
+  });
+}
+function renderSlots(){
+  var banEl = document.getElementById("banSlots");
+  var teamEl = document.getElementById("teamSlots");
+  var enEl = document.getElementById("enemySlots");
+  var html, i;
+  if(banEl){
+    html = bans.map(function(b, i2){ return slotHtml("ban", i2, b); }).join("");
+    if(bans.length < 10) html += slotHtml("ban", -1, null);
+    banEl.innerHTML = html;
+    wireSlots(banEl);
+  }
+  if(teamEl){
+    html = slotHtml("you", 0, myPick);
+    for(i = 0; i < 4; i++) html += slotHtml("team", i, team[i] || null);
+    teamEl.innerHTML = html;
+    wireSlots(teamEl);
+  }
+  if(enEl){
+    html = "";
+    for(i = 0; i < 5; i++) html += slotHtml("enemy", i, enemies[i] || null);
+    enEl.innerHTML = html;
+    wireSlots(enEl);
+  }
+  if(quickEl && quickEl.querySelectorAll){
+    Array.prototype.forEach.call(quickEl.querySelectorAll("button"), function(b){
+      var qh = b.getAttribute("data-h");
+      if(!qh) return;
+      if(enemies.indexOf(qh) >= 0) b.classList.add("on"); else b.classList.remove("on");
+      if(bans.indexOf(qh) >= 0) b.classList.add("banned"); else b.classList.remove("banned");
+    });
+  }
+}
+(function(){
+  var pi = document.getElementById("pickerInput");
+  if(pi){
+    pi.addEventListener("input", function(){ renderPicker(pi.value); });
+    pi.addEventListener("keydown", function(e){
+      if(e.key === "ArrowDown"){ if(picker.keys.length){ picker.sel = Math.min(picker.sel + 1, picker.keys.length - 1); paintPickerSel(); } e.preventDefault(); }
+      else if(e.key === "ArrowUp"){ picker.sel = Math.max(picker.sel - 1, 0); paintPickerSel(); e.preventDefault(); }
+      else if(e.key === "Enter"){ if(picker.keys[picker.sel]) pickSlotHero(picker.keys[picker.sel]); e.preventDefault(); }
+      else if(e.key === "Escape"){ closePicker(); }
+    });
+  }
+  var pc = document.getElementById("pickerClose");
+  if(pc) pc.onclick = function(){ closePicker(); };
+  var pl = document.getElementById("pickerList");
+  if(pl){
+    pl.addEventListener("click", function(e){
+      var t = e.target;
+      if(!t || !t.closest) return;
+      var opt = t.closest(".cpk-opt");
+      if(opt){ pickSlotHero(opt.getAttribute("data-h")); return; }
+      var cb = t.closest(".cbtn");
+      if(cb){
+        var act = cb.getAttribute("data-act");
+        var kind = picker.kind, idx = picker.idx;
+        closePicker();
+        if(act === "view"){ buildView = cb.getAttribute("data-h"); render(); }
+        else if(act === "remove"){ removeSlot(kind, idx); }
+      }
+    });
+  }
+  document.addEventListener("click", function(e){
+    if(!picker.open) return;
+    var t = e.target;
+    if(t && t.closest && !t.closest("#slotPicker") && !t.closest(".dslot")) closePicker();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && picker.open) closePicker();
+  });
+})();
 
 function lockPick(name){
-  if(bans.indexOf(name)>=0){ teamMsg(name+" is banned in this draft."); return; }
-  if(enemies.indexOf(name)>=0){ teamMsg(name+" is on the enemy team."); return; }
-  if(team.indexOf(name)>=0){ buildView = name; teamMsg(name+" is a teammate's hero — showing their build instead."); render(); return; }
+  if(bans.indexOf(name)>=0){ cpkMsg(name+" is banned in this draft."); return; }
+  if(enemies.indexOf(name)>=0){ cpkMsg(name+" is on the enemy team."); return; }
+  if(team.indexOf(name)>=0){ buildView = name; cpkMsg(name+" is a teammate's hero — showing their build instead."); render(); return; }
   myPick = name; buildView = null;
   render();
 }
@@ -2578,9 +2651,7 @@ function weightOf(i){ return i===0?3 : i===1?2.5 : i===2?2 : i===3?1.5 : 1; }
 /* ---- clear the whole draft ---- */
 function clearDraft(){
   enemies = []; team = []; myPick = null; bans = []; buildView = null;
-  input.value = ""; drop.style.display = "none"; cpkMsg("");
-  if(teamInput){ teamInput.value = ""; teamDrop.style.display = "none"; teamMsg(""); }
-  if(banInput){ banInput.value = ""; banDrop.style.display = "none"; banMsgEl.textContent = ""; banMsgEl.style.display = "none"; }
+  closePicker(); cpkMsg("");
   render();
 }
 (function(){
@@ -2590,49 +2661,8 @@ function clearDraft(){
 function render(){
   var _dcb = document.getElementById("draftClear");
   if(_dcb) _dcb.style.display = (enemies.length || team.length || myPick || bans.length) ? "" : "none";
-  /* team chips: teammates + your locked pick */
-  teamChipsEl.innerHTML = team.concat(myPick?[myPick]:[]).map(function(t){
-    var me = t===myPick;
-    return '<span class="tchip'+(me?" me":"")+'" data-h="'+esc(t)+'" title="'+(me?"Your locked pick — click to view its build":"Teammate — click to view build, ✕ to remove")+'">'+avatar(t)+'<span>'+esc(t)+(me?" (you)":"")+'</span><span class="x" data-h="'+esc(t)+'">✕</span></span>';
-  }).join("");
-  Array.prototype.forEach.call(teamChipsEl.querySelectorAll(".tchip .x"), function(el){
-    el.onclick = function(ev){
-      ev.stopPropagation();
-      var h = el.getAttribute("data-h");
-      if(h===myPick){ myPick = null; render(); } else { removeTeam(h); }
-    };
-  });
-  Array.prototype.forEach.call(teamChipsEl.querySelectorAll(".tchip"), function(el){
-    el.onclick = function(ev){
-      if(ev.target.classList && ev.target.classList.contains("x")) return;
-      buildView = el.getAttribute("data-h"); render();
-    };
-  });
-  /* banned chips */
-  banChipsEl.innerHTML = bans.map(function(b){
-    return '<span class="bchip" data-h="'+esc(b)+'" title="Banned — click to view its build, ✕ to unban">'+avatar(b)+'<span>'+esc(b)+'</span><span class="x" data-h="'+esc(b)+'">✕</span></span>';
-  }).join("");
-  Array.prototype.forEach.call(banChipsEl.querySelectorAll(".bchip .x"), function(el){
-    el.onclick = function(ev){ ev.stopPropagation(); removeBan(el.getAttribute("data-h")); };
-  });
-  Array.prototype.forEach.call(banChipsEl.querySelectorAll(".bchip"), function(el){
-    el.onclick = function(ev){
-      if(ev.target.classList && ev.target.classList.contains("x")) return;
-      buildView = el.getAttribute("data-h"); render();
-    };
-  });
-  /* enemy chips + quick bar */
-  chipsEl.innerHTML = enemies.map(function(e){
-    return '<span class="echip">'+avatar(e)+'<span>'+esc(e)+'</span><span class="x" data-h="'+esc(e)+'">✕</span></span>';
-  }).join("");
-  Array.prototype.forEach.call(chipsEl.querySelectorAll(".x"), function(el){
-    el.onclick = function(){ removeEnemy(el.getAttribute("data-h")); };
-  });
-  Array.prototype.forEach.call(quickEl.querySelectorAll("button"), function(b){
-    var qh = b.getAttribute("data-h");
-    if(enemies.indexOf(qh)>=0){ b.classList.add("on"); } else { b.classList.remove("on"); }
-    if(bans.indexOf(qh)>=0){ b.classList.add("banned"); } else { b.classList.remove("banned"); }
-  });
+  /* draft slots (v20) */
+  renderSlots();
 
   var draftStarted = enemies.length || team.length || myPick || buildView || bans.length;
   if(!draftStarted){
