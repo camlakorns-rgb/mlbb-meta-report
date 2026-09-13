@@ -1816,6 +1816,17 @@ function hmmDamp(p, v){
 }
 /* expert vouch = GREAT/BEST in the lane in play (or anywhere if no lane is set) */
 function hmmVouched(p){ return (hmmVal(p, myLaneNow()) || 0) >= 0.65; }
+/* measured-counter parole: a bottom-tier hero with a STRONG measured edge (+3.5pp+) vs an enemy
+   on this board - and whose overall tier score isn't catastrophic - competes nearly normally.
+   The matchup data earned it; this is how mlbb.io's own counter lists behave. */
+function measParole(p){
+  if(TIERSCORE[p] && TIERSCORE[p].v < -1.2) return false;
+  for(var i = 0; i < enemies.length; i++){
+    var e = measEdge(p, enemies[i]);
+    if(e !== null && e >= 3.5) return true;
+  }
+  return false;
+}
 /* name of the best expert placement (for display) */
 function hmmBestName(p){ var d = HMM[p]; if(!d) return null; var bn = null, bv = -2; for(var k in d) if(HMM_T[d[k]] > bv){ bv = HMM_T[d[k]]; bn = d[k]; } return bn; }
 
@@ -3000,7 +3011,7 @@ function render(){
         var mp = measEff(pick, en);
         var confF = pair[2]===3 ? 1.0 : (pair[2]===2 ? 0.85 : 0.55); /* single-source opinions count less */
         var pts = weightOf(i) * 0.55 * confF;
-        if(mp !== null){ pts += Math.min(mp, 2.5) * edgeScale; measCnt[pick] = (measCnt[pick]||0)+1; }
+        if(mp !== null){ pts += Math.min(mp, 2.5) * edgeScale * 1.35; measCnt[pick] = (measCnt[pick]||0)+1; } /* measured edges (mlbb.io) are the strongest signal - weighted up */
         if(kitReason(pick, en).length) pts += 0.2; /* our rule-based kit logic backs this pick */
         score[pick] += pts * lf;
         reasons[pick].push({vs:en, why:why, conf:(pair[2]||1), pp:(mp===null?undefined:mp)});
@@ -3011,7 +3022,7 @@ function render(){
         if(!score[pick]){ score[pick]=0; reasons[pick]=[]; measCnt[pick]=0; }
         if(reasons[pick].some(function(r){ return r.vs===en; })) return;
         var eff = mpp[1] * sampleF(pick); /* shrink by the pick's ranked sample size */
-        score[pick] += Math.min(eff, 2.5) * lf * edgeScale;
+        score[pick] += Math.min(eff, 2.5) * lf * edgeScale * 1.35;
         measCnt[pick] = (measCnt[pick]||0)+1;
         reasons[pick].push({vs:en, why:"Measured +"+mpp[1].toFixed(1)+"pp win-rate edge (mlbb.io ranked data)", conf:3, pp:mpp[1], measOnly:true});
       });
@@ -3046,8 +3057,8 @@ function render(){
     Object.keys(score).forEach(function(p){
       var ts = TIERSCORE[p] ? TIERSCORE[p].v : 0;
       var nf = HMM95A.nerfed.indexOf(p) >= 0 ? 0.6 : 1; /* our ranked data predates the 2.1.95a nerf - shrink the stale prior */
-      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55 * priorScale * nf));
-      if(TIER[p] === "D" && !hmmVouched(p)) score[p] -= 1.5; /* measured bottom tier: last resort, never a medal - unless the expert list vouches for them in this lane (skill-gated heroes) */
+      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.40 * priorScale * nf)); /* hero quality matters, but a big real edge beats it */
+      if(TIER[p] === "D" && !hmmVouched(p)) score[p] -= (measParole(p) ? 0.5 : 1.5); /* measured bottom tier: last resort - unless expert-vouched in this lane, or paroled by a strong measured counter edge */
     });
     /* hmmsucks expert prior (patch 2.1.95 lane tiers): the high-elo read, capped so it tilts but
        never overrides measured data; 2.1.95a balance changes dampen it direction-aware */
@@ -3081,7 +3092,7 @@ function render(){
       });
     }
     /* D-tier answers sort to the back of the board: strong-meta options are always listed first */
-    var dFlag = function(p){ return (TIER[p]==="D" && !hmmVouched(p)) ? 1 : 0; }; /* expert-vouched D-tiers compete normally */
+    var dFlag = function(p){ return (TIER[p]==="D" && !hmmVouched(p) && !measParole(p)) ? 1 : 0; }; /* expert-vouched or measured-paroled D-tiers compete normally */
     var allRanked = Object.keys(score).sort(function(a,b){
       return (dFlag(a)-dFlag(b)) || (score[b]-score[a]) || (tierRank(a)-tierRank(b)) || (reasons[b].length-reasons[a].length) || a.localeCompare(b);
     });
@@ -3177,7 +3188,8 @@ function render(){
       + '</span>';
     var grid = show.length
       ? '<div class="rec-grid">' + show.map(function(pick, idx){
-          var vs = reasons[pick].map(function(r){
+          var rs = reasons[pick].slice().sort(function(a,b){ return (b.pp===undefined?-99:b.pp) - (a.pp===undefined?-99:a.pp); }); /* measured evidence leads */
+          var vs = rs.map(function(r){
             var kit = kitReason(pick, r.vs).length > 0;
             var b;
             if(r.pp !== undefined){
@@ -3209,8 +3221,8 @@ function render(){
           else if(_df === 2) metaBits.push('<span class="mb" title="high pilot difficulty — combo/skillshot demanding; Easy-picks mode demotes it">⚡ hard to pilot</span>');
           if(NEEDS_TEAM.indexOf(pick) >= 0) metaBits.push('<span class="mb" title="per editorial cross-checks this hero pays off most when your team plays around it — esports-tier in coordinated hands, coin-flip in solo queue">needs coordination</span>');
           var metaRow = metaBits.length ? '<div class="rec-meta">'+metaBits.join('')+'</div>' : '';
-          var topWhy = reasons[pick].slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
-          var mslot = (TIER[pick]==="D" && !hmmVouched(pick)) ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D" && !hmmVouched(x); }).length;
+          var topWhy = rs.slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
+          var mslot = (TIER[pick]==="D" && !hmmVouched(pick) && !measParole(pick)) ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D" || hmmVouched(x) || measParole(x); }).length; /* medal slots consumed by every medal-eligible pick ahead */
           var medal = mslot===0 ? " m1" : mslot===1 ? " m2" : mslot===2 ? " m3" : "";
           var warns = (warnedBy[pick]||[]).map(function(w){
             return '<span class="warn-badge" title="'+esc(w)+' is strong against '+esc(pick)+' — have a backup plan">⚠️ weak vs '+esc(w)+'</span>';
@@ -3244,7 +3256,7 @@ function render(){
       + '<div class="verdict">'+verdict+'</div>'
       + profHtml
       + balRow + laneSel + orderSel + comfortSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal (lifted when the hmmsucks expert list rates the hero GREAT/BEST in your lane — skill-gated picks whose ranked WR punishes average pilots); + hmmsucks expert prior (patch 2.1.95 lane tiers, ±1.2, direction-aware: nerfed-in-2.1.95a heroes keep 25% of a positive expert read, buffed heroes keep their boost); −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus, <b>★ expert</b> hmmsucks top-tier read in your lane, <b>⚖ 2.1.95a</b> balance-changed after the expert list. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters; Easy-picks mode demotes hard-to-pilot heroes (difficulty curated from official ratings + community consensus). The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size, weighted 1.35×</b> — real matchup data leads the board) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.40× tier score, ±1.8 — hero quality matters, but a big real edge beats it); D-tier picks carry a −1.5 last-resort penalty and never take a medal — lifted for expert-vouched heroes (hmmsucks GREAT/BEST in your lane) and reduced to −0.5 by measured-counter parole (a +3.5pp+ measured edge vs an enemy on this board, on a hero that is not a ranked feeder — mlbb.io counter logic showing through); + hmmsucks expert prior (patch 2.1.95 lane tiers, ±1.2, direction-aware: nerfed-in-2.1.95a heroes keep 25% of a positive expert read, buffed heroes keep their boost); −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus, <b>★ expert</b> hmmsucks top-tier read in your lane, <b>⚖ 2.1.95a</b> balance-changed after the expert list. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters; Easy-picks mode demotes hard-to-pilot heroes (difficulty curated from official ratings + community consensus). The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
