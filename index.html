@@ -515,6 +515,9 @@
 .mb.meas{color:#8fd8ff;} .mb.kvb{color:#7ee787;}
 .mb.kvb{background:rgba(126,231,135,.12);color:#7ee787;}
 .mb.warn{color:var(--danger-hi);}
+.mb.hmm{background:rgba(245,196,81,.13);color:#f5c451;}
+.mb.situ{color:#d29a4a;}
+.mb.stale{color:#d29a4a;border-color:#d29a4a55;}
 .kv{color:#7ee787;font-weight:700;}
 .kv.data{color:#8fd8ff;}
 .lfbar{margin-left:auto;}
@@ -1792,6 +1795,30 @@ var TIER = {}, TIERSCORE = {};
     TIERSCORE[x.h] = {v:x.v, rank:i+1};
   });
 })();
+/* hmmsucks expert tiers (patch 2.1.95, Aug 23 2026) - the community gold-standard tier list, lane by lane, extracted from the published grid via portrait matching (all 133 heroes). Captures the high-elo/competitive read that all-ranks win rates undersell (skill-gated heroes). GOOD = neutral anchor; SOLID/SITUATIONAL = below the expert bar. */
+var HMM = {"Aamon":{"Jungle":"VERYGOOD"},"Akai":{"Roam":"GOOD","Jungle":"VERYGOOD","EXP":"GOOD"},"Aldous":{"EXP":"SITUATIONAL","Gold":"SITUATIONAL"},"Alice":{"Jungle":"VERYGOOD","EXP":"GREAT"},"Alpha":{"Jungle":"SITUATIONAL","EXP":"SITUATIONAL"},"Alucard":{"Jungle":"GOOD","EXP":"SOLID"},"Angela":{"Mid":"GOOD","Roam":"VERYGOOD"},"Argus":{"EXP":"SOLID","Gold":"SOLID"},"Arlott":{"Roam":"SOLID","EXP":"VERYGOOD"},"Atlas":{"Roam":"BEST"},"Aulus":{"Jungle":"GOOD","EXP":"SITUATIONAL"},"Aurora":{"Mid":"GOOD"},"Badang":{"Mid":"SITUATIONAL","Roam":"VERYGOOD","EXP":"GOOD"},"Balmond":{"Jungle":"GOOD","EXP":"GOOD"},"Bane":{"Mid":"SOLID","Jungle":"GOOD","Gold":"SOLID"},"Barats":{"Jungle":"GOOD","EXP":"BEST"},"Baxia":{"Roam":"SOLID","Jungle":"GOOD","EXP":"SOLID"},"Beatrix":{"Mid":"SITUATIONAL","Gold":"VERYGOOD"},"Belerick":{"Roam":"BEST","EXP":"VERYGOOD"},"Benedetta":{"Mid":"GOOD","Roam":"SOLID","Jungle":"SOLID","EXP":"VERYGOOD","Gold":"GOOD"},"Brody":{"Gold":"GREAT"},"Bruno":{"Gold":"VERYGOOD"},"Carmilla":{"Roam":"GREAT","Jungle":"VERYGOOD","EXP":"VERYGOOD"},"Cecilion":{"Mid":"GOOD"},"Chang'e":{"Mid":"SITUATIONAL","Gold":"SITUATIONAL"},"Chip":{"Roam":"VERYGOOD"},"Chou":{"Mid":"SOLID","Roam":"VERYGOOD","EXP":"GOOD","Gold":"SOLID"},"Cici":{"EXP":"GOOD","Gold":"GOOD"},"Claude":{"Gold":"GREAT"},"Clint":{"Gold":"GREAT"},"Cyclops":{"Mid":"GOOD","Jungle":"SOLID","Gold":"SOLID"},"Diggie":{"Roam":"VERYGOOD"},"Dyrroth":{"Jungle":"GOOD","EXP":"GREAT"},"Edith":{"Mid":"SITUATIONAL","Roam":"GOOD","EXP":"GOOD"},"Esmeralda":{"Jungle":"GOOD","EXP":"GREAT","Gold":"VERYGOOD"},"Estes":{"Roam":"VERYGOOD"},"Eudora":{"Mid":"GREAT"},"Fanny":{"Jungle":"BEST"},"Faramis":{"Mid":"GOOD","Roam":"SOLID"},"Floryn":{"Roam":"VERYGOOD"},"Franco":{"Roam":"SOLID"},"Fredrinn":{"Jungle":"VERYGOOD","EXP":"GOOD"},"Freya":{"Jungle":"VERYGOOD","EXP":"GREAT","Gold":"BEST"},"Gatotkaca":{"Roam":"VERYGOOD","EXP":"SOLID"},"Gloo":{"Roam":"GREAT","EXP":"VERYGOOD"},"Gord":{"Mid":"VERYGOOD"},"Granger":{"Gold":"VERYGOOD"},"Grock":{"Roam":"VERYGOOD","EXP":"SOLID"},"Guinevere":{"Mid":"SOLID","Roam":"VERYGOOD","Jungle":"VERYGOOD","EXP":"GOOD","Gold":"SOLID"},"Gusion":{"Mid":"GOOD","Jungle":"GOOD"},"Hanabi":{"Gold":"VERYGOOD"},"Hanzo":{"Jungle":"GREAT"},"Harith":{"Jungle":"SOLID","Gold":"VERYGOOD"},"Harley":{"Mid":"GOOD","Jungle":"GREAT","Gold":"SOLID"},"Hayabusa":{"Jungle":"GOOD"},"Helcurt":{"Mid":"SOLID","Roam":"GOOD","Jungle":"SOLID","Gold":"SOLID"},"Hilda":{"Roam":"VERYGOOD","EXP":"VERYGOOD"},"Hirara":{"Roam":"GOOD","Jungle":"BEST"},"Hylos":{"Roam":"VERYGOOD","EXP":"GOOD"},"Irithel":{"Gold":"VERYGOOD"},"Ixia":{"Gold":"VERYGOOD"},"Jawhead":{"Roam":"SOLID","Jungle":"SITUATIONAL","EXP":"SITUATIONAL"},"Johnson":{"Roam":"GOOD"},"Joy":{"Mid":"SITUATIONAL","Jungle":"GOOD","EXP":"GOOD"},"Julian":{"Mid":"SOLID","Jungle":"GOOD","EXP":"GOOD"},"Kadita":{"Mid":"VERYGOOD","Roam":"SITUATIONAL"},"Kagura":{"Mid":"VERYGOOD","EXP":"SOLID"},"Kaja":{"Roam":"GREAT"},"Kalea":{"Roam":"VERYGOOD"},"Karina":{"Jungle":"SOLID"},"Karrie":{"Gold":"VERYGOOD"},"Khaleed":{"Mid":"SOLID","Roam":"VERYGOOD","EXP":"GOOD"},"Khufra":{"Roam":"VERYGOOD","EXP":"SOLID"},"Kimmy":{"Mid":"VERYGOOD","Gold":"GOOD"},"Lancelot":{"Jungle":"GOOD"},"Lapu-Lapu":{"EXP":"VERYGOOD","Gold":"GOOD"},"Layla":{"Gold":"SITUATIONAL"},"Leomord":{"Jungle":"VERYGOOD","EXP":"SOLID"},"Lesley":{"Gold":"GOOD"},"Ling":{"Jungle":"GREAT"},"Lolita":{"Roam":"GOOD"},"Lukas":{"Jungle":"GREAT","EXP":"GOOD"},"Lunox":{"Mid":"GOOD","Gold":"SOLID"},"Luo Yi":{"Mid":"VERYGOOD"},"Lylia":{"Mid":"VERYGOOD"},"Marcel":{"Roam":"BEST"},"Martis":{"Mid":"SITUATIONAL","Roam":"SITUATIONAL","Jungle":"GOOD","EXP":"SOLID"},"Masha":{"Jungle":"GOOD","EXP":"VERYGOOD","Gold":"GOOD"},"Mathilda":{"Mid":"GOOD","Roam":"GREAT"},"Melissa":{"Gold":"BEST"},"Minotaur":{"Roam":"GREAT"},"Minsitthar":{"Roam":"SITUATIONAL","EXP":"GOOD","Gold":"GOOD"},"Miya":{"Gold":"GREAT"},"Moskov":{"Gold":"GREAT"},"Nana":{"Mid":"SITUATIONAL"},"Natalia":{"Roam":"SOLID","Jungle":"SOLID"},"Natan":{"Gold":"GOOD"},"Nolan":{"Jungle":"GREAT"},"Novaria":{"Mid":"GREAT","Roam":"GOOD"},"Obsidia":{"Gold":"GOOD"},"Odette":{"Mid":"VERYGOOD","Gold":"SOLID"},"Paquito":{"Mid":"SOLID","Jungle":"BEST","EXP":"GREAT","Gold":"GREAT"},"Pharsa":{"Mid":"VERYGOOD"},"Phoveus":{"EXP":"VERYGOOD"},"Popol":{"Jungle":"SOLID","Gold":"SITUATIONAL"},"Rafaela":{"Mid":"GREAT","Roam":"GREAT"},"Roger":{"Jungle":"SOLID","Gold":"SOLID"},"Ruby":{"Mid":"SOLID","Roam":"SOLID","EXP":"GREAT","Gold":"VERYGOOD"},"Saber":{"Mid":"SOLID","Roam":"SOLID","Jungle":"VERYGOOD","EXP":"SITUATIONAL"},"Selena":{"Mid":"GREAT","Roam":"GOOD","Jungle":"SITUATIONAL"},"Silvanna":{"Mid":"SOLID","Roam":"SOLID","Jungle":"GOOD","EXP":"GOOD"},"Sora":{"EXP":"GREAT","Gold":"GOOD"},"Sun":{"Roam":"GOOD","Jungle":"GOOD","EXP":"SOLID","Gold":"GOOD"},"Suyou":{"Mid":"GOOD","Jungle":"GREAT","EXP":"GOOD","Gold":"SOLID"},"Terizla":{"Roam":"SOLID","EXP":"VERYGOOD"},"Thamuz":{"Jungle":"GOOD","EXP":"GOOD"},"Tigreal":{"Roam":"GOOD","EXP":"SITUATIONAL"},"Uranus":{"Jungle":"GOOD","EXP":"BEST"},"Vale":{"Mid":"GOOD"},"Valentina":{"Mid":"GREAT","EXP":"GOOD","Gold":"SITUATIONAL"},"Valir":{"Mid":"VERYGOOD","Roam":"SOLID"},"Vexana":{"Mid":"VERYGOOD"},"Wanwan":{"Gold":"SITUATIONAL"},"X.Borg":{"Jungle":"GOOD","EXP":"GOOD","Gold":"SOLID"},"Xavier":{"Mid":"GOOD"},"Yi Sun-shin":{"Jungle":"GREAT","Gold":"GOOD"},"Yin":{"Jungle":"SOLID","EXP":"SOLID"},"Yu Zhong":{"EXP":"VERYGOOD"},"Yve":{"Mid":"VERYGOOD"},"Zetian":{"Mid":"VERYGOOD"},"Zhask":{"Mid":"SITUATIONAL","Jungle":"SITUATIONAL"},"Zhuxin":{"Mid":"GREAT","Roam":"GOOD"},"Zilong":{"Roam":"SITUATIONAL","EXP":"SITUATIONAL","Gold":"SITUATIONAL"}};
+var HMM_T = {"BEST":1,"GREAT":0.65,"VERYGOOD":0.3,"GOOD":0,"SOLID":-0.35,"SITUATIONAL":-0.7};
+/* patch 2.1.95a balance changes that postdate the expert list - expert reads on these heroes are stale. (gamemarket listed Hanzo as buffed, but the MLBBHub regen-scaling nerf detail + his post-patch WR drop say nerfed.) */
+var HMM95A = { nerfed:["Atlas","Hanzo","Gord","Aamon","Leomord","Sora","Yu Zhong"], buffed:["Hayabusa","Obsidia","Lukas","Suyou","Miya"] };
+/* expert read for this hero in this lane: lane placement if a lane is in play, else best placement anywhere. No placement for the lane in play = 0 (the off-lane fit penalty handles the rest). */
+function hmmVal(p, lane){
+  var d = HMM[p]; if(!d) return null;
+  if(lane) return d[lane] !== undefined ? HMM_T[d[lane]] : 0;
+  var best = null; for(var k in d){ var v = HMM_T[d[k]]; if(best === null || v > best) best = v; }
+  return best;
+}
+/* direction-aware dampening for 2.1.95a-changed heroes: a nerf eats positive expert reads (keep 25%) but makes negative ones MORE credible; a buff does the reverse. */
+function hmmDamp(p, v){
+  if(!v) return 1;
+  if(HMM95A.nerfed.indexOf(p) >= 0) return v > 0 ? 0.25 : 1;
+  if(HMM95A.buffed.indexOf(p) >= 0) return v < 0 ? 0.25 : 1;
+  return 1;
+}
+/* expert vouch = GREAT/BEST in the lane in play (or anywhere if no lane is set) */
+function hmmVouched(p){ return (hmmVal(p, myLaneNow()) || 0) >= 0.65; }
+/* name of the best expert placement (for display) */
+function hmmBestName(p){ var d = HMM[p]; if(!d) return null; var bn = null, bv = -2; for(var k in d) if(HMM_T[d[k]] > bv){ bv = HMM_T[d[k]]; bn = d[k]; } return bn; }
+
 var ISLUG = {"Antique Cuirass":"i-antique-cuirass","Arcane Boots":"i-arcane-boots","Athena's Shield":"i-athenas-shield","Berserker's Fury":"i-berserkers-fury","Blade Armor":"i-blade-armor","Blade of Despair":"i-blade-of-despair","Blade of the Heptaseas":"i-blade-of-the-heptaseas","Blood Wings":"i-blood-wings","Brute Force Breastplate":"i-brute-force-breastplate","Chastise Pauldron":"i-chastise-pauldron","Clock of Destiny":"i-clock-of-destiny","Concentrated Energy":"i-concentrated-energy","Corrosion Scythe":"i-corrosion-scythe","Cursed Helmet":"i-cursed-helmet","Demon Boots":"i-demon-boots","Demon Hunter Sword":"i-demon-hunter-sword","Divine Glaive":"i-divine-glaive","Dominance Ice":"i-dominance-ice","Enchanted Talisman":"i-enchanted-talisman","Endless Battle":"i-endless-battle","Feather of Heaven":"i-feather-of-heaven","Flask of the Oasis":"i-flask-of-the-oasis","Fleeting Time":"i-fleeting-time","Genius Wand":"i-genius-wand","Glowing Wand":"i-glowing-wand","Golden Staff":"i-golden-staff","Great Dragon Spear":"i-great-dragon-spear","Guardian Helmet":"i-guardian-helmet","Haas's Claws":"i-haass-claws","Holy Crystal":"i-holy-crystal","Hunter Strike":"i-hunter-strike","Ice Queen Wand":"i-ice-queen-wand","Immortality":"i-immortality","Lightning Truncheon":"i-lightning-truncheon","Magic Boots":"i-magic-boots","Malefic Gun":"i-malefic-gun","Malefic Roar":"i-malefic-roar","Oracle":"i-oracle","Queen's Wings":"i-queens-wings","Radiant Armor":"i-radiant-armor","Rapid Boots":"i-rapid-boots","Rose Gold Meteor":"i-rose-gold-meteor","Sea Halberd":"i-sea-halberd","Sky Piercer":"i-sky-piercer","Starlium Scythe":"i-starlium-scythe","Swift Boots":"i-swift-boots","Thunder Belt":"i-thunder-belt","Tough Boots":"i-tough-boots","War Axe":"i-war-axe","Warrior Boots":"i-warrior-boots","Wind of Nature":"i-wind-of-nature","Windtalker":"i-windtalker","Winter Crown":"i-winter-crown","Wishing Lantern":"i-wishing-lantern"};
 var SSLUG = {"Aegis":"s-aegis","Execute":"s-execute","Flameshot":"s-flameshot","Flicker":"s-flicker","Inspire":"s-inspire","Petrify":"s-petrify","Purify":"s-purify","Retribution":"s-retribution","Revitalize":"s-revitalize","Sprint":"s-sprint","Vengeance":"s-vengeance"};
 var ESLUG = {"Assassin":"e-assassin","Mage":"e-mage","Marksman":"e-marksman","Fighter":"e-fighter","Tank":"e-tank","Support":"e-support","Basic Common":"e-common"};
@@ -2484,7 +2511,9 @@ function banAdvisorHtml(){
       if(pp2 !== null) mHandled += Math.min(pp2, 3);
     });
     var measT = 0; mPrey.forEach(function(x){ measT += Math.min(x.pp, 3); });
-    cands.push({h:H, threat: prey.length*1.5 + (BANW[TIER[H]]||0) - cw + measT*0.45 - mHandled*0.25, prey: prey, countered: countered, mPrey: mPrey, mHandled: mHandled});
+    var _hb = hmmVal(H, null) || 0;
+    var _hmmT = _hb > 0 ? _hb * 1.1 * hmmDamp(H, _hb) : 0; /* expert threat (hmmsucks), dampened for 2.1.95a changes */
+    cands.push({h:H, threat: prey.length*1.5 + (BANW[TIER[H]]||0) - cw + measT*0.45 - mHandled*0.25 + _hmmT, prey: prey, countered: countered, mPrey: mPrey, mHandled: mHandled, hmm:_hmmT});
   });
   cands.sort(function(a,b){ return (b.threat-a.threat) || (tierRank(a.h)-tierRank(b.h)) || a.h.localeCompare(b.h); });
   var top = cands.slice(0,5);
@@ -2494,6 +2523,7 @@ function banAdvisorHtml(){
     if(c.prey.length) why.push('<b>eats '+c.prey.map(esc).join(" & ")+'</b>');
     if(c.mPrey.length) why.push('\ud83d\udcca measured '+c.mPrey.slice(0,2).map(function(x){ return '+'+x.pp.toFixed(1)+'pp vs your '+x.t; }).join(', ')+(c.mPrey.length>2?'\u2026':''));
     if(TIER[c.h] && (TIER[c.h]==="S"||TIER[c.h]==="A") && c.threat>0) why.push(esc(TIER[c.h])+"-tier power pick");
+    if(c.hmm > 0.2) why.push("expert " + hmmBestName(c.h) + " (hmmsucks" + ((HMM95A.nerfed.indexOf(c.h) >= 0 || HMM95A.buffed.indexOf(c.h) >= 0) ? ", 2.1.95a-dampened" : "") + ")");
     var cnote = "";
     if(c.countered.length) cnote = '<span class="ban-dim">your '+c.countered.map(function(x){return esc(x.t);}).join("/")+' already handles it</span>';
     else if(c.mHandled > 0) cnote = '<span class="ban-dim">your team measurably handles it ('+'\u2212'+(c.mHandled*0.25).toFixed(1)+')</span>';
@@ -3015,8 +3045,17 @@ function render(){
        Weighted so counter edges cannot carry a weak hero past solid picks. */
     Object.keys(score).forEach(function(p){
       var ts = TIERSCORE[p] ? TIERSCORE[p].v : 0;
-      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55 * priorScale));
-      if(TIER[p] === "D") score[p] -= 1.5; /* measured bottom tier: last resort, never a medal */
+      var nf = HMM95A.nerfed.indexOf(p) >= 0 ? 0.6 : 1; /* our ranked data predates the 2.1.95a nerf - shrink the stale prior */
+      score[p] += Math.max(-1.8, Math.min(1.8, ts * 0.55 * priorScale * nf));
+      if(TIER[p] === "D" && !hmmVouched(p)) score[p] -= 1.5; /* measured bottom tier: last resort, never a medal - unless the expert list vouches for them in this lane (skill-gated heroes) */
+    });
+    /* hmmsucks expert prior (patch 2.1.95 lane tiers): the high-elo read, capped so it tilts but
+       never overrides measured data; 2.1.95a balance changes dampen it direction-aware */
+    Object.keys(score).forEach(function(p){
+      var hv = hmmVal(p, myLaneNow());
+      if(!hv) return;
+      var pilotF = (comfortMode === "easy" && hv > 0 && diffOf(p) >= 2) ? 0.3 : 1; /* expert reads assume you can pilot the hero */
+      score[p] += Math.max(-1.2, Math.min(1.2, hv * 0.9 * hmmDamp(p, hv) * pilotF));
     });
     /* full-damage enemy comps (no frontline): lockdown, dive and frontline picks get the edge;
        immobile squishy backliners get demoted — they are what this comp feeds on */
@@ -3042,7 +3081,7 @@ function render(){
       });
     }
     /* D-tier answers sort to the back of the board: strong-meta options are always listed first */
-    var dFlag = function(p){ return TIER[p]==="D" ? 1 : 0; };
+    var dFlag = function(p){ return (TIER[p]==="D" && !hmmVouched(p)) ? 1 : 0; }; /* expert-vouched D-tiers compete normally */
     var allRanked = Object.keys(score).sort(function(a,b){
       return (dFlag(a)-dFlag(b)) || (score[b]-score[a]) || (tierRank(a)-tierRank(b)) || (reasons[b].length-reasons[a].length) || a.localeCompare(b);
     });
@@ -3157,7 +3196,12 @@ function render(){
           var stx = STATS[pick];
           if(stx && stx[2] >= 12) metaBits.push('<span class="mb warn" title="banned in '+stx[2].toFixed(0)+'% of ranked games — have a backup ready">🚫 ban-risk '+stx[2].toFixed(0)+'%</span>');
           if(stx && stx[1] < 0.35) metaBits.push('<span class="mb" title="picked in only '+stx[1].toFixed(1)+'% of ranked games — thin sample behind these numbers">🔍 niche pick</span>');
-          if(TIER[pick]==="D") metaBits.push('<span class="mb warn" title="measured bottom tier this patch (mlbb.io ranked data) — a hard counter on a losing hero still loses games, so it cannot take a medal">📉 weak meta</span>');
+          var _ml = myLaneNow(), _hv = hmmVal(pick, _ml), _hn = _ml && HMM[pick] ? (HMM[pick][_ml] || null) : null;
+          if(_hv !== null && _hv >= 0.65) metaBits.push('<span class="mb hmm" title="hmmsucks tier list, patch 2.1.95 (community gold standard for high-elo/competitive reads): ' + (_hn ? _hn + ' in ' + _ml : 'top-tier placement') + (TIER[pick]==="D" ? ' - measured all-ranks D because the hero is skill-gated; the pilot-difficulty flag still applies' : '') + '">★ expert ' + (_hn ? _hn + ' · ' + _ml : 'top pick') + '</span>');
+          else if(TIER[pick]==="D") metaBits.push('<span class="mb warn" title="measured bottom tier this patch (mlbb.io ranked data) — a hard counter on a losing hero still loses games, so it cannot take a medal">📉 weak meta</span>');
+          if(_hv === HMM_T.SITUATIONAL) metaBits.push('<span class="mb situ" title="hmmsucks tier list, patch 2.1.95: situational' + (_hn ? ' in ' + _ml : ' everywhere') + ' - needs the right draft/game to pay off">⚖ expert: situational</span>');
+          if(HMM95A.nerfed.indexOf(pick) >= 0) metaBits.push('<span class="mb stale" title="nerfed in patch 2.1.95a, after the expert list and our measured data were taken - expert reads keep only 25% of their positive weight and the measured prior is shrunk to 60%">⚖ 2.1.95a nerfed</span>');
+          else if(HMM95A.buffed.indexOf(pick) >= 0) metaBits.push('<span class="mb stale" title="buffed in patch 2.1.95a, after the expert list was made - any negative expert read is dampened; the buffs are not in the numbers yet">⚖ 2.1.95a buffed</span>');
           var _flx = pickOrder === "first" ? laneOf(pick).split("/").filter(function(x){ return !!x; }) : [];
           if(_flx.length >= 2) metaBits.push('<span class="mb" title="playable in '+_flx.length+' lanes — safe to lock before you see their answer">flex · '+_flx.join("/")+'</span>');
           var _df = diffOf(pick);
@@ -3166,7 +3210,7 @@ function render(){
           if(NEEDS_TEAM.indexOf(pick) >= 0) metaBits.push('<span class="mb" title="per editorial cross-checks this hero pays off most when your team plays around it — esports-tier in coordinated hands, coin-flip in solo queue">needs coordination</span>');
           var metaRow = metaBits.length ? '<div class="rec-meta">'+metaBits.join('')+'</div>' : '';
           var topWhy = reasons[pick].slice(0,2).map(function(r){return "vs "+r.vs+": "+r.why;}).join(" · ");
-          var mslot = TIER[pick]==="D" ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D"; }).length;
+          var mslot = (TIER[pick]==="D" && !hmmVouched(pick)) ? 99 : show.slice(0, idx).filter(function(x){ return TIER[x]!=="D" && !hmmVouched(x); }).length;
           var medal = mslot===0 ? " m1" : mslot===1 ? " m2" : mslot===2 ? " m3" : "";
           var warns = (warnedBy[pick]||[]).map(function(w){
             return '<span class="warn-badge" title="'+esc(w)+' is strong against '+esc(pick)+' — have a backup plan">⚠️ weak vs '+esc(w)+'</span>';
@@ -3200,7 +3244,7 @@ function render(){
       + '<div class="verdict">'+verdict+'</div>'
       + profHtml
       + balRow + laneSel + orderSel + comfortSel + rfbtns + grid
-      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal; −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters; Easy-picks mode demotes hard-to-pilot heroes (difficulty curated from official ratings + community consensus). The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
+      + '<div style="font-size:11.5px;color:var(--muted);margin-top:10px;">Score = measured win-rate edges (mlbb.io ranked data, Aug 2026, <b>shrunk by sample size</b>) + confidence-weighted 3-source ensemble (● dots = trackers agreeing; single-source picks count 0.55×) + kit-logic bonus + measured meta-strength prior (0.55× tier score, ±1.8 — strong enough that counter edges cannot carry a weak hero); D-tier picks carry a −1.5 last-resort penalty and never take a medal (lifted when the hmmsucks expert list rates the hero GREAT/BEST in your lane — skill-gated picks whose ranked WR punishes average pilots); + hmmsucks expert prior (patch 2.1.95 lane tiers, ±1.2, direction-aware: nerfed-in-2.1.95a heroes keep 25% of a positive expert read, buffed heroes keep their boost); −1.2 per enemy strong against the pick ⚠️ (measured reverse edges count too); off-lane picks demoted when your lane is set; + team-fit adjustments (frontline / damage mix / measured synergy). <b>✅</b> kit-verified, <b>📊</b> measured-only, <b>⚔️</b> kit-backed consensus, <b>★ expert</b> hmmsucks top-tier read in your lane, <b>⚖ 2.1.95a</b> balance-changed after the expert list. Set your lane to weight counters you actually face; set pick timing (1st/Mid/Last) to weight safe picks vs hard counters; Easy-picks mode demotes hard-to-pilot heroes (difficulty curated from official ratings + community consensus). The enemy profile strip is derived from what each hero actually builds; full-damage comps shift the board toward lockdown and frontline picks. Ties break by measured tier (computed from mlbb.io ranked win/pick/ban rates), then coverage. Tap <b>＋ Pick</b> to lock a hero and open its build; click any chip for builds. Heroes banned in the grey bar never appear anywhere.</div></div>';
 
     /* combo threats (enemy pairs) */
     if(enemies.length >= 2){
