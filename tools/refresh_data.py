@@ -320,7 +320,7 @@ TEXT_REPLACEMENTS = [
     ("ensemble of three independent matchup trackers</b> (MLBBHub ranked stats, mlbb.io, mlcounters — crawled Aug 29, 2026, patch 2.1.95) and community guide consensus (Zathong, BitTopup, Reddit). No single site\\'s list is trusted alone:",
      "MLBBHub ranked matchup stats</b> (crawled Sep 25, 2026, patch 2.2.16 — stats through the Sep 16 Season 42 launch), merged with the curated guide + kit reasoning kept from the v25 three-tracker ensemble. No single site\\'s list is trusted alone:"),
     ("Moonton ships balance patches roughly every 2 weeks (Advance Server is testing 2.2.10), so expect drift",
-     "Season 42 (Sep 16, 2026) shipped 8 hero revamps — Masha (full rework), Bruno, Brody, Kadita, Badang, Clint, Paquito, Luo Yi — so expect drift as the patch settles"),
+     "Season 42 (Sep 16, 2026) shipped the Masha/Bruno reworks and a 25-hero balance pass (nerfs: Marcel, Melissa, Miya, Hanabi, Yi Sun-shin, Paquito), so expect drift"),
     ("mlbb.io ranked data, Aug 2026",
      "MLBBHub ranked data, Sep 2026"),
     ("measured win-rate edges from mlbb.io ranked data (crawled",
