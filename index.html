@@ -540,6 +540,15 @@
 @media(max-width:640px){.tier-row{flex-wrap:wrap;}.tier-heroes{min-width:120px;}}
 .twr{font-size:10.5px;color:var(--muted);margin-left:3px;}
 .tsep{color:#3a3a42;margin:0 4px;}
+/* tier chips with portraits (v26) */
+.tier-heroes.ths{display:flex;flex-wrap:wrap;gap:6px;}
+.th{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px;background:var(--raise);border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--text);line-height:1.3;}
+.th .thav{width:22px;height:22px;border-radius:50%;background-size:cover;background-position:center;background-repeat:no-repeat;flex:0 0 auto;border:1px solid var(--line);}
+.th .thav.noimg{display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);background:var(--card2);}
+.th .twr{font-size:10.5px;color:var(--muted);margin-left:1px;}
+.th .flx{font-size:9.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap;}
+.tier-heroes.ths.cd .th{opacity:.7;}
+.tcount{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px;}
 .tUp{color:#4ecb7a;font-size:11px;}
 .tDn{color:#f8839c;font-size:11px;}
 .tier-label.tCD{background:none;color:var(--muted);border:1px solid var(--line);font-size:12px;}
@@ -765,12 +774,12 @@
 <!-- ================= TIER LISTS ================= -->
 <section id="tiers">
   <h2><span class="num">04</span>Tier Lists by Role</h2>
-  <p class="lead">Computed by us from mlbb.io ranked data — all ranks, past 7 days (Aug 30, 2026). Strength = win rate above 50%, shrunk by sample size (pick rate), plus a ban-rate signal; tiers are relative ranks in the current meta (S = top ~6%). ▲/▼ marks disagreement with MLBBHub's editorial tier. Win rate shown next to each hero.</p>
+  <p class="lead">Computed by us from MLBBHub ranked data — all ranks, season through Sep 16, 2026 (patch 2.2.16, Season 42 launch). Strength = win rate above 50%, shrunk by sample size (pick rate), plus a ban-rate signal; tiers are relative ranks in the current meta (S = top 8). Heroes sit in their <b>primary</b> lane — the <b>←</b> badge lists flex lanes. ▲/▼ marks disagreement with MLBBHub's editorial tier. Hover a hero for WR / pick / ban detail.</p>
   <div class="cols" id="tierCols"></div>
   <div class="card">
     <div class="label">The meta in one paragraph</div>
-    <p class="note">Utility and sustain supports are running the game from roam (Marcel, Rafaela, Floryn, Estes all 53%+ WR). The jungle belongs to lockdown/utility assassins and the reworked Hanzo rather than pure burst. EXP is about split-push pressure and unkillable bruisers (Sun, Masha, Gloo). Mid favors zone/control mages (Zetian, Yve, Kadita, Gord). Gold lane is an on-hit marksman meta (Melissa, Hanabi) with magic-damage Kimmy as the flex pick.</p>
-    <p class="note small">Editorial cross-checks we kept: Hayabusa is S+ in esports lists but 47.6% WR in ranked — great in coordinated hands, coin-flip in solo queue. Zhuxin is S in editorial lists but 47.7% WR in ranked — she needs a real front line.</p>
+    <p class="note">Season 42's eight revamps flipped the board. Roam is a support/tank fortress — Rafaela (58.5% WR), Belerick, Gloo, Estes and Floryn all measure S, with Marcel at 58.4% WR but on such a tiny pick rate (0.3%) that sample-shrinkage holds him at A. Gold lane is Melissa's (57.1%), with a resurrected Miya (53.9% on a huge 3.7% pick) and Hanabi behind her. EXP belongs to Sun, with Paquito, Barats, Lukas and 54% Argus underneath. Mid is burst/control — Eudora is suddenly S (62.7% ban rate) over Valir and Gord. Jungle has no S tier at all: ban-magnets Hirara (63.5% ban), Yi Sun-shin, Saber and Hanzo lead a utility-first, low-WR pool.</p>
+    <p class="note small">Editorial cross-checks we kept: Hayabusa is still loved by esports lists but measures 48.6% WR in ranked (C) — great in coordinated hands, coin-flip in solo queue. Zhuxin measures 48.1% (C) — she needs a real front line. Masha's rework shows 56.0% WR but on a 0.11% sample (▲ vs the hub's S) — promising, not proven.</p>
   </div>
 </section>
 
@@ -3167,25 +3176,35 @@ function tierArrow(h){
   if(d < 0) return '<span class="tDn" title="measured '+m+' vs MLBBHub editorial '+e+'">▼</span> ';
   return "";
 }
+function tierChip(h, dim){
+  var ls = laneList(h);
+  var flex = ls.length > 1 ? ' <span class="flx" title="also played: '+esc(ls.slice(1).join(", "))+'">&#8592; '+esc(ls.slice(1).join(", "))+'</span>' : '';
+  var s = STATS[h] || [50,0,0];
+  var tip = h+' — '+(ROLE[h]||'')+' | WR '+s[0].toFixed(1)+'% · pick '+s[1].toFixed(2)+'% · ban '+s[2].toFixed(1)+'%'+(TIERHUB[h] ? ' | MLBBHub editorial tier: '+TIERHUB[h] : '');
+  var img = IMG[h] ? '<span class="av '+IMG[h]+' thav" style="width:22px;height:22px"></span>'
+                   : '<span class="av thav noimg" style="width:22px;height:22px">'+esc(h.charAt(0))+'</span>';
+  var wr = dim ? '' : ' <span class="twr">'+s[0].toFixed(1)+'%</span>';
+  return '<span class="th" title="'+esc(tip)+'">'+tierArrow(h)+img+'<span class="thn">'+esc(h)+'</span>'+wr+flex+'</span>';
+}
 function renderTierSection(){
   var TITLES = {Jungle:"Jungle / Assassin", EXP:"EXP Lane / Fighter", Mid:"Mid / Mage", Gold:"Gold / Marksman", Roam:"Roam / Tank &amp; Support"};
   var el = document.getElementById("tierCols");
   if(!el) return;
   var html = "";
   LANES.forEach(function(lane){
-    var hs = Object.keys(TIER).filter(function(h){ return (ROLE[h]||"").indexOf(lane) >= 0; });
+    var hs = Object.keys(TIER).filter(function(h){ return primaryLane(h) === lane; });
     hs.sort(function(a,b){ return (TIERSCORE[a].rank - TIERSCORE[b].rank) || a.localeCompare(b); });
-    html += '<div class="card"><div class="label">'+TITLES[lane]+'</div>';
+    html += '<div class="card"><div class="label">'+TITLES[lane]+'<span class="tcount">'+hs.length+' heroes</span></div>';
     ["S","A","B"].forEach(function(t){
       var list = hs.filter(function(h){ return TIER[h] === t; });
       if(!list.length) return;
-      html += '<div class="tier-row"><div class="tier-label t'+t+'">'+t+'</div><div class="tier-heroes">'
-        + list.map(function(h){ return tierArrow(h)+esc(h)+' <span class="twr">'+STATS[h][0].toFixed(1)+'%</span>'; }).join(' <span class="tsep">·</span> ') + '</div></div>';
+      html += '<div class="tier-row"><div class="tier-label t'+t+'">'+t+'</div><div class="tier-heroes ths">'
+        + list.map(function(h){ return tierChip(h, false); }).join('') + '</div></div>';
     });
     var cd = hs.filter(function(h){ return TIER[h] === "C" || TIER[h] === "D"; });
     if(cd.length){
-      html += '<div class="tier-row"><div class="tier-label tCD">C·D</div><div class="tier-heroes" style="color:var(--muted);font-size:13px;">'
-        + cd.map(function(h){ return tierArrow(h)+esc(h); }).join(' <span class="tsep">·</span> ') + '</div></div>';
+      html += '<div class="tier-row"><div class="tier-label tCD">C·D</div><div class="tier-heroes ths cd">'
+        + cd.map(function(h){ return tierChip(h, true); }).join('') + '</div></div>';
     }
     html += '</div>';
   });
@@ -3200,7 +3219,7 @@ function applyMeasuredChips(){
     if(!TIER[name] || !TIERHUB[name]) return;
     if(Math.abs(steps[TIER[name]] - steps[TIERHUB[name]]) < 2) return;
     var b = card.querySelector(".badge.tier");
-    if(b && b.insertAdjacentHTML) b.insertAdjacentHTML("afterend", '<span class="badge mtier" title="measured tier from mlbb.io ranked data (Aug 30, 2026): '+TIER[name]+' — editorial tier: '+TIERHUB[name]+'">measured '+TIER[name]+'</span>');
+    if(b && b.insertAdjacentHTML) b.insertAdjacentHTML("afterend", '<span class="badge mtier" title="measured tier from MLBBHub ranked data (Sep 16, 2026, patch 2.2.16): '+TIER[name]+' — editorial tier: '+TIERHUB[name]+'">measured '+TIER[name]+'</span>');
   });
   Array.prototype.forEach.call(document.querySelectorAll(".top-card"), function(card){
     var nm = card.querySelector(".name");
@@ -3208,7 +3227,7 @@ function applyMeasuredChips(){
     var name = String(nm.childNodes[0].textContent || "").trim();
     if(!TIER[name] || !TIERHUB[name]) return;
     if(Math.abs(steps[TIER[name]] - steps[TIERHUB[name]]) < 2) return;
-    if(nm.insertAdjacentHTML) nm.insertAdjacentHTML("beforeend", ' <span class="tag mtag" title="measured tier (mlbb.io ranked data): '+TIER[name]+' vs editorial '+TIERHUB[name]+'">measured '+TIER[name]+'</span>');
+    if(nm.insertAdjacentHTML) nm.insertAdjacentHTML("beforeend", ' <span class="tag mtag" title="measured tier (MLBBHub ranked data): '+TIER[name]+' vs editorial '+TIERHUB[name]+'">measured '+TIER[name]+'</span>');
   });
 }
 renderTierSection();
