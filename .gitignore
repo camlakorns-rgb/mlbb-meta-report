@@ -1,0 +1,20 @@
+# --- build scratch ---
+build/
+__pycache__/
+*.pyc
+.venv/
+
+# --- dev-only artifacts: QA screenshots + superseded/unused sources ---
+# None of these are read by assets/assemble.py. They are kept on disk for
+# reference only (see artifacts/README.md) and held out of git so the repo
+# stays at ~3.5 MB of actual source instead of ~16 MB.
+artifacts/
+
+# --- upload / transfer scratch ---
+*.zip
+*.z01
+*.z02
+*.z[0-9][0-9]
+*.7z
+*.part
+ws/

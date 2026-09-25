@@ -1,0 +1,526 @@
+{
+ "Aamon": {
+  "Jungler": "VERYGOOD"
+ },
+ "Akai": {
+  "Roam": "GOOD",
+  "Jungler": "VERYGOOD",
+  "EXP": "GOOD"
+ },
+ "Aldous": {
+  "EXP": "SITUATIONAL",
+  "Gold": "SITUATIONAL"
+ },
+ "Alice": {
+  "Jungler": "VERYGOOD",
+  "EXP": "GREAT"
+ },
+ "Alpha": {
+  "Jungler": "SITUATIONAL",
+  "EXP": "SITUATIONAL"
+ },
+ "Alucard": {
+  "Jungler": "GOOD",
+  "EXP": "SOLID"
+ },
+ "Angela": {
+  "Mid": "GOOD",
+  "Roam": "VERYGOOD"
+ },
+ "Argus": {
+  "EXP": "SOLID",
+  "Gold": "SOLID"
+ },
+ "Arlott": {
+  "Roam": "SOLID",
+  "EXP": "VERYGOOD"
+ },
+ "Atlas": {
+  "Roam": "BEST"
+ },
+ "Aulus": {
+  "Jungler": "GOOD",
+  "EXP": "SITUATIONAL"
+ },
+ "Aurora": {
+  "Mid": "GOOD"
+ },
+ "Badang": {
+  "Mid": "SITUATIONAL",
+  "Roam": "VERYGOOD",
+  "EXP": "GOOD"
+ },
+ "Balmond": {
+  "Jungler": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Bane": {
+  "Mid": "SOLID",
+  "Jungler": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Barats": {
+  "Jungler": "GOOD",
+  "EXP": "BEST"
+ },
+ "Baxia": {
+  "Roam": "SOLID",
+  "Jungler": "GOOD",
+  "EXP": "SOLID"
+ },
+ "Beatrix": {
+  "Mid": "SITUATIONAL",
+  "Gold": "VERYGOOD"
+ },
+ "Belerick": {
+  "Roam": "BEST",
+  "EXP": "VERYGOOD"
+ },
+ "Benedetta": {
+  "Mid": "GOOD",
+  "Roam": "SOLID",
+  "Jungler": "SOLID",
+  "EXP": "VERYGOOD",
+  "Gold": "GOOD"
+ },
+ "Brody": {
+  "Gold": "GREAT"
+ },
+ "Bruno": {
+  "Gold": "VERYGOOD"
+ },
+ "Carmilla": {
+  "Roam": "GREAT",
+  "Jungler": "VERYGOOD",
+  "EXP": "VERYGOOD"
+ },
+ "Cecilion": {
+  "Mid": "GOOD"
+ },
+ "Chang'e": {
+  "Mid": "SITUATIONAL",
+  "Gold": "SITUATIONAL"
+ },
+ "Chip": {
+  "Roam": "VERYGOOD"
+ },
+ "Chou": {
+  "Mid": "SOLID",
+  "Roam": "VERYGOOD",
+  "EXP": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Cici": {
+  "EXP": "GOOD",
+  "Gold": "GOOD"
+ },
+ "Claude": {
+  "Gold": "GREAT"
+ },
+ "Clint": {
+  "Gold": "GREAT"
+ },
+ "Cyclops": {
+  "Mid": "GOOD",
+  "Jungler": "SOLID",
+  "Gold": "SOLID"
+ },
+ "Diggie": {
+  "Roam": "VERYGOOD"
+ },
+ "Dyrroth": {
+  "Jungler": "GOOD",
+  "EXP": "GREAT"
+ },
+ "Edith": {
+  "Mid": "SITUATIONAL",
+  "Roam": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Esmeralda": {
+  "Jungler": "GOOD",
+  "EXP": "GREAT",
+  "Gold": "VERYGOOD"
+ },
+ "Estes": {
+  "Roam": "VERYGOOD"
+ },
+ "Eudora": {
+  "Mid": "GREAT"
+ },
+ "Fanny": {
+  "Jungler": "BEST"
+ },
+ "Faramis": {
+  "Mid": "GOOD",
+  "Roam": "SOLID"
+ },
+ "Floryn": {
+  "Roam": "VERYGOOD"
+ },
+ "Franco": {
+  "Roam": "SOLID"
+ },
+ "Fredrinn": {
+  "Jungler": "VERYGOOD",
+  "EXP": "GOOD"
+ },
+ "Freya": {
+  "Jungler": "VERYGOOD",
+  "EXP": "GREAT",
+  "Gold": "BEST"
+ },
+ "Gatotkaca": {
+  "Roam": "VERYGOOD",
+  "EXP": "SOLID"
+ },
+ "Gloo": {
+  "Roam": "GREAT",
+  "EXP": "VERYGOOD"
+ },
+ "Gord": {
+  "Mid": "VERYGOOD"
+ },
+ "Granger": {
+  "Gold": "VERYGOOD"
+ },
+ "Grock": {
+  "Roam": "VERYGOOD",
+  "EXP": "SOLID"
+ },
+ "Guinevere": {
+  "Mid": "SOLID",
+  "Roam": "VERYGOOD",
+  "Jungler": "VERYGOOD",
+  "EXP": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Gusion": {
+  "Mid": "GOOD",
+  "Jungler": "GOOD"
+ },
+ "Hanabi": {
+  "Gold": "VERYGOOD"
+ },
+ "Hanzo": {
+  "Jungler": "GREAT"
+ },
+ "Harith": {
+  "Jungler": "SOLID",
+  "Gold": "VERYGOOD"
+ },
+ "Harley": {
+  "Mid": "GOOD",
+  "Jungler": "GREAT",
+  "Gold": "SOLID"
+ },
+ "Hayabusa": {
+  "Jungler": "GOOD"
+ },
+ "Helcurt": {
+  "Mid": "SOLID",
+  "Roam": "GOOD",
+  "Jungler": "SOLID",
+  "Gold": "SOLID"
+ },
+ "Hilda": {
+  "Roam": "VERYGOOD",
+  "EXP": "VERYGOOD"
+ },
+ "Hirara": {
+  "Roam": "GOOD",
+  "Jungler": "BEST"
+ },
+ "Hylos": {
+  "Roam": "VERYGOOD",
+  "EXP": "GOOD"
+ },
+ "Irithel": {
+  "Gold": "VERYGOOD"
+ },
+ "Ixia": {
+  "Gold": "VERYGOOD"
+ },
+ "Jawhead": {
+  "Roam": "SOLID",
+  "Jungler": "SITUATIONAL",
+  "EXP": "SITUATIONAL"
+ },
+ "Johnson": {
+  "Roam": "GOOD"
+ },
+ "Joy": {
+  "Mid": "SITUATIONAL",
+  "Jungler": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Julian": {
+  "Mid": "SOLID",
+  "Jungler": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Kadita": {
+  "Mid": "VERYGOOD",
+  "Roam": "SITUATIONAL"
+ },
+ "Kagura": {
+  "Mid": "VERYGOOD",
+  "EXP": "SOLID"
+ },
+ "Kaja": {
+  "Roam": "GREAT"
+ },
+ "Kalea": {
+  "Roam": "VERYGOOD"
+ },
+ "Karina": {
+  "Jungler": "SOLID"
+ },
+ "Karrie": {
+  "Gold": "VERYGOOD"
+ },
+ "Khaleed": {
+  "Mid": "SOLID",
+  "Roam": "VERYGOOD",
+  "EXP": "GOOD"
+ },
+ "Khufra": {
+  "Roam": "VERYGOOD",
+  "EXP": "SOLID"
+ },
+ "Kimmy": {
+  "Mid": "VERYGOOD",
+  "Gold": "GOOD"
+ },
+ "Lancelot": {
+  "Jungler": "GOOD"
+ },
+ "Lapu-Lapu": {
+  "EXP": "VERYGOOD",
+  "Gold": "GOOD"
+ },
+ "Layla": {
+  "Gold": "SITUATIONAL"
+ },
+ "Leomord": {
+  "Jungler": "VERYGOOD",
+  "EXP": "SOLID"
+ },
+ "Lesley": {
+  "Gold": "GOOD"
+ },
+ "Ling": {
+  "Jungler": "GREAT"
+ },
+ "Lolita": {
+  "Roam": "GOOD"
+ },
+ "Lukas": {
+  "Jungler": "GREAT",
+  "EXP": "GOOD"
+ },
+ "Lunox": {
+  "Mid": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Luo Yi": {
+  "Mid": "VERYGOOD"
+ },
+ "Lylia": {
+  "Mid": "VERYGOOD"
+ },
+ "Marcel": {
+  "Roam": "BEST"
+ },
+ "Martis": {
+  "Mid": "SITUATIONAL",
+  "Roam": "SITUATIONAL",
+  "Jungler": "GOOD",
+  "EXP": "SOLID"
+ },
+ "Masha": {
+  "Jungler": "GOOD",
+  "EXP": "VERYGOOD",
+  "Gold": "GOOD"
+ },
+ "Mathilda": {
+  "Mid": "GOOD",
+  "Roam": "GREAT"
+ },
+ "Melissa": {
+  "Gold": "BEST"
+ },
+ "Minotaur": {
+  "Roam": "GREAT"
+ },
+ "Minsitthar": {
+  "Roam": "SITUATIONAL",
+  "EXP": "GOOD",
+  "Gold": "GOOD"
+ },
+ "Miya": {
+  "Gold": "GREAT"
+ },
+ "Moskov": {
+  "Gold": "GREAT"
+ },
+ "Nana": {
+  "Mid": "SITUATIONAL"
+ },
+ "Natalia": {
+  "Roam": "SOLID",
+  "Jungler": "SOLID"
+ },
+ "Natan": {
+  "Gold": "GOOD"
+ },
+ "Nolan": {
+  "Jungler": "GREAT"
+ },
+ "Novaria": {
+  "Mid": "GREAT",
+  "Roam": "GOOD"
+ },
+ "Obsidia": {
+  "Gold": "GOOD"
+ },
+ "Odette": {
+  "Mid": "VERYGOOD",
+  "Gold": "SOLID"
+ },
+ "Paquito": {
+  "Mid": "SOLID",
+  "Jungler": "BEST",
+  "EXP": "GREAT",
+  "Gold": "GREAT"
+ },
+ "Pharsa": {
+  "Mid": "VERYGOOD"
+ },
+ "Phoveus": {
+  "EXP": "VERYGOOD"
+ },
+ "Popol and Kupa": {
+  "Jungler": "SOLID",
+  "Gold": "SITUATIONAL"
+ },
+ "Rafaela": {
+  "Mid": "GREAT",
+  "Roam": "GREAT"
+ },
+ "Roger": {
+  "Jungler": "SOLID",
+  "Gold": "SOLID"
+ },
+ "Ruby": {
+  "Mid": "SOLID",
+  "Roam": "SOLID",
+  "EXP": "GREAT",
+  "Gold": "VERYGOOD"
+ },
+ "Saber": {
+  "Mid": "SOLID",
+  "Roam": "SOLID",
+  "Jungler": "VERYGOOD",
+  "EXP": "SITUATIONAL"
+ },
+ "Selena": {
+  "Mid": "GREAT",
+  "Roam": "GOOD",
+  "Jungler": "SITUATIONAL"
+ },
+ "Silvanna": {
+  "Mid": "SOLID",
+  "Roam": "SOLID",
+  "Jungler": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Sora": {
+  "EXP": "GREAT",
+  "Gold": "GOOD"
+ },
+ "Sun": {
+  "Roam": "GOOD",
+  "Jungler": "GOOD",
+  "EXP": "SOLID",
+  "Gold": "GOOD"
+ },
+ "Suyou": {
+  "Mid": "GOOD",
+  "Jungler": "GREAT",
+  "EXP": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Terizla": {
+  "Roam": "SOLID",
+  "EXP": "VERYGOOD"
+ },
+ "Thamuz": {
+  "Jungler": "GOOD",
+  "EXP": "GOOD"
+ },
+ "Tigreal": {
+  "Roam": "GOOD",
+  "EXP": "SITUATIONAL"
+ },
+ "Uranus": {
+  "Jungler": "GOOD",
+  "EXP": "BEST"
+ },
+ "Vale": {
+  "Mid": "GOOD"
+ },
+ "Valentina": {
+  "Mid": "GREAT",
+  "EXP": "GOOD",
+  "Gold": "SITUATIONAL"
+ },
+ "Valir": {
+  "Mid": "VERYGOOD",
+  "Roam": "SOLID"
+ },
+ "Vexana": {
+  "Mid": "VERYGOOD"
+ },
+ "Wanwan": {
+  "Gold": "SITUATIONAL"
+ },
+ "X.Borg": {
+  "Jungler": "GOOD",
+  "EXP": "GOOD",
+  "Gold": "SOLID"
+ },
+ "Xavier": {
+  "Mid": "GOOD"
+ },
+ "Yi Sun-shin": {
+  "Jungler": "GREAT",
+  "Gold": "GOOD"
+ },
+ "Yin": {
+  "Jungler": "SOLID",
+  "EXP": "SOLID"
+ },
+ "Yu Zhong": {
+  "EXP": "VERYGOOD"
+ },
+ "Yve": {
+  "Mid": "VERYGOOD"
+ },
+ "Zetian": {
+  "Mid": "VERYGOOD"
+ },
+ "Zhask": {
+  "Mid": "SITUATIONAL",
+  "Jungler": "SITUATIONAL"
+ },
+ "Zhuxin": {
+  "Mid": "GREAT",
+  "Roam": "GOOD"
+ },
+ "Zilong": {
+  "Roam": "SITUATIONAL",
+  "EXP": "SITUATIONAL",
+  "Gold": "SITUATIONAL"
+ }
+}
