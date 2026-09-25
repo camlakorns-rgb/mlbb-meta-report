@@ -226,6 +226,11 @@ def gen_layers(snapshot, old):
             head = "Ranked answer"
         return "%s — measured +%.1f pp WR edge" % (head, pp)
 
+    def sanitize_reason(reason, fresh_pp):
+        """Old curated reasons may embed stale edge numbers — refresh them to the
+        measured value for the same matchup (kit flavor text is preserved)."""
+        return re.sub(r"\+(\d+(?:\.\d+)?) pp", lambda m: "+%.1f pp" % fresh_pp, reason)
+
     db_out = {}
     old_db = old["db"]
     for h in sorted(db_names, key=str.lower):
@@ -235,6 +240,7 @@ def gen_layers(snapshot, old):
         c_list = []
         for cname, pp in edges:
             reason = old_c.get(cname) or fresh_reason(cname, h, pp)
+            reason = sanitize_reason(reason, pp)
             w = 3 if pp >= 2.5 else (2 if pp >= 1.8 else 1)
             c_list.append([cname, reason, w])
         # avoid = measured prey (heroes this enemy counters), old avoid as fallback filler
